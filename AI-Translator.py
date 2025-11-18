@@ -17,7 +17,7 @@ import tempfile
 # App Configuration
 # -----------------------------
 st.set_page_config(
-    page_title="🤖 AI Translator Pro",
+    page_title="🤖 AI Translator ",
     page_icon="🤖",
     layout="wide",
     initial_sidebar_state="expanded"

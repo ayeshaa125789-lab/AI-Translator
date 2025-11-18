@@ -17,7 +17,7 @@ import tempfile
 # App Configuration
 # -----------------------------
 st.set_page_config(
-    page_title="🤖 AI Translator ",
+    page_title="🤖 AI Translator",
     page_icon="🤖",
     layout="wide",
     initial_sidebar_state="expanded"
@@ -51,7 +51,7 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 # App Header
-st.markdown('<h1 class="main-header">🤖 AI Translator Pro</h1>', unsafe_allow_html=True)
+st.markdown('<h1 class="main-header">🤖 AI Translator</h1>', unsafe_allow_html=True)
 st.markdown("### 🚀 Intelligent Translation with PDF Support & Text-to-Speech")
 
 # -----------------------------
@@ -545,10 +545,10 @@ with col3:
 st.markdown("---")
 st.markdown("""
 <div style='text-align: center;'>
-    <h4>🤖 AI Translator Pro</h4>
-    <p>Professional Translation Tool with PDF Support & Text-to-Speech</p>
+    <h4>🤖 AI Translator</h4>
+    <p>Intelligent Translation Tool with PDF Support & Text-to-Speech</p>
     <p><b>Powered by:</b> Streamlit • Google Translate • gTTS • PyPDF2</p>
 </div>
 """, unsafe_allow_html=True)
 
-st.caption("© 2024 AI Translator Pro - All rights reserved")
+st.caption("© 2024 AI Translator - All rights reserved")

@@ -1,25 +1,11 @@
 import streamlit as st
-import os
+import requests
 import json
+import os
 from datetime import datetime
 import re
-
-# First try to import required packages
-try:
-    from deep_translator import GoogleTranslator
-except ImportError:
-    st.error("❌ deep-translator package is not installed. Please add it to requirements.txt")
-    st.stop()
-
-try:
-    from gtts import gTTS
-except ImportError:
-    st.warning("⚠️ gTTS is not available. Audio features will be limited.")
-
-try:
-    import pyttsx3
-except ImportError:
-    st.warning("⚠️ pyttsx3 is not available. Backup audio features disabled.")
+import base64
+from io import BytesIO
 
 # -----------------------------
 # Streamlit Page Config
@@ -48,62 +34,93 @@ st.markdown("""
         margin-bottom: 2rem;
     }
     .success-box {
-        padding: 20px;
+        padding: 15px;
         border-radius: 10px;
         background-color: #d4edda;
         border: 1px solid #c3e6cb;
         margin: 10px 0px;
+    }
+    .language-box {
+        padding: 10px;
+        border-radius: 8px;
+        background-color: #f8f9fa;
+        border: 1px solid #e9ecef;
+        margin: 5px 0px;
     }
 </style>
 """, unsafe_allow_html=True)
 
 # App Header
 st.markdown('<h1 class="main-header">🤖 AI Translator</h1>', unsafe_allow_html=True)
-st.markdown('<p class="sub-header">Intelligent Translation in 100+ Languages | رومن اردو سے اصل اردو میں ترجمہ</p>', unsafe_allow_html=True)
+st.markdown('<p class="sub-header">Intelligent Translation with Speech for ALL Languages | پشتو سمیت تمام زبانوں کی آواز</p>', unsafe_allow_html=True)
 
 # -----------------------------
-# Language List
+# Complete Language List with Speech Support
 # -----------------------------
 LANGUAGES = {
     'Auto Detect': 'auto',
-    'English': 'en', 
+    
+    # South Asian Languages with Speech
     'Urdu': 'ur',
     'Hindi': 'hi',
+    'Pashto': 'ps',  # پشتو - مکمل سپیچ سپورٹ
+    'Punjabi': 'pa',
+    'Sindhi': 'sd',
+    'Balochi': 'bal',  # بلوچی
+    'Kashmiri': 'ks',
+    'Bengali': 'bn',
+    'Nepali': 'ne',
+    'Sinhala': 'si',
+    'Dhivehi': 'dv',  # مالدیپ کی زبان
+    
+    # Middle Eastern Languages
     'Arabic': 'ar',
-    'Spanish': 'es', 
-    'French': 'fr', 
+    'Persian (Farsi)': 'fa',
+    'Turkish': 'tr',
+    'Kurdish': 'ku',
+    'Hebrew': 'he',
+    
+    # European Languages
+    'English': 'en',
+    'Spanish': 'es',
+    'French': 'fr',
     'German': 'de',
+    'Italian': 'it',
+    'Portuguese': 'pt',
+    'Russian': 'ru',
+    'Dutch': 'nl',
+    'Greek': 'el',
+    'Polish': 'pl',
+    'Ukrainian': 'uk',
+    'Romanian': 'ro',
+    'Swedish': 'sv',
+    'Norwegian': 'no',
+    'Danish': 'da',
+    'Finnish': 'fi',
+    
+    # East Asian Languages
     'Chinese (Simplified)': 'zh-CN',
     'Chinese (Traditional)': 'zh-TW',
     'Japanese': 'ja',
     'Korean': 'ko',
-    'Russian': 'ru',
-    'Portuguese': 'pt',
-    'Italian': 'it',
-    'Dutch': 'nl',
-    'Greek': 'el',
-    'Hebrew': 'he',
-    'Turkish': 'tr',
-    'Polish': 'pl',
-    'Ukrainian': 'uk',
-    'Romanian': 'ro',
-    'Persian': 'fa',
-    'Bengali': 'bn',
-    'Punjabi': 'pa',
-    'Marathi': 'mr',
-    'Gujarati': 'gu',
-    'Tamil': 'ta',
-    'Telugu': 'te',
-    'Kannada': 'kn',
-    'Malayalam': 'ml',
-    'Sinhala': 'si',
+    
+    # Southeast Asian Languages
     'Thai': 'th',
     'Vietnamese': 'vi',
     'Indonesian': 'id',
     'Malay': 'ms',
     'Filipino': 'tl',
+    'Burmese': 'my',
+    
+    # African Languages
     'Swahili': 'sw',
     'Afrikaans': 'af',
+    'Amharic': 'am',
+    'Yoruba': 'yo',
+    'Zulu': 'zu',
+    'Xhosa': 'xh',
+    
+    # Other Important Languages
     'Albanian': 'sq',
     'Armenian': 'hy',
     'Azerbaijani': 'az',
@@ -112,91 +129,85 @@ LANGUAGES = {
     'Bosnian': 'bs',
     'Bulgarian': 'bg',
     'Catalan': 'ca',
-    'Cebuano': 'ceb',
-    'Chichewa': 'ny',
-    'Corsican': 'co',
     'Croatian': 'hr',
     'Czech': 'cs',
-    'Danish': 'da',
-    'Esperanto': 'eo',
     'Estonian': 'et',
-    'Finnish': 'fi',
-    'Frisian': 'fy',
-    'Galician': 'gl',
     'Georgian': 'ka',
-    'Haitian Creole': 'ht',
-    'Hausa': 'ha',
-    'Hawaiian': 'haw',
-    'Hmong': 'hmn',
     'Hungarian': 'hu',
     'Icelandic': 'is',
-    'Igbo': 'ig',
     'Irish': 'ga',
-    'Javanese': 'jw',
     'Kazakh': 'kk',
-    'Khmer': 'km',
-    'Kinyarwanda': 'rw',
-    'Kurdish': 'ku',
-    'Kyrgyz': 'ky',
-    'Lao': 'lo',
-    'Latin': 'la',
     'Latvian': 'lv',
     'Lithuanian': 'lt',
-    'Luxembourgish': 'lb',
     'Macedonian': 'mk',
-    'Malagasy': 'mg',
     'Maltese': 'mt',
-    'Maori': 'mi',
-    'Mongolian': 'mn',
-    'Myanmar (Burmese)': 'my',
-    'Nepali': 'ne',
-    'Norwegian': 'no',
-    'Odia (Oriya)': 'or',
-    'Pashto': 'ps',
-    'Samoan': 'sm',
-    'Scots Gaelic': 'gd',
     'Serbian': 'sr',
-    'Sesotho': 'st',
-    'Shona': 'sn',
-    'Sindhi': 'sd',
     'Slovak': 'sk',
     'Slovenian': 'sl',
-    'Somali': 'so',
-    'Sundanese': 'su',
-    'Swedish': 'sv',
     'Tajik': 'tg',
-    'Tatar': 'tt',
+    'Tamil': 'ta',
+    'Telugu': 'te',
     'Turkmen': 'tk',
-    'Uyghur': 'ug',
     'Uzbek': 'uz',
-    'Welsh': 'cy',
-    'Xhosa': 'xh',
-    'Yiddish': 'yi',
-    'Yoruba': 'yo',
-    'Zulu': 'zu'
+    'Welsh': 'cy'
 }
 
+# Languages with guaranteed speech support
+SPEECH_SUPPORTED_LANGUAGES = [
+    'ur', 'hi', 'ps', 'pa', 'ar', 'fa', 'tr', 'en', 'es', 'fr', 'de', 'it', 
+    'pt', 'ru', 'zh-CN', 'ja', 'ko', 'th', 'vi', 'id', 'ms', 'bn', 'nl', 'pl',
+    'uk', 'ro', 'sv', 'no', 'da', 'fi', 'el', 'he', 'cs', 'hu', 'sk', 'hr'
+]
+
 # -----------------------------
-# Language Detection Functions
+# Enhanced Language Detection
 # -----------------------------
 def detect_roman_urdu(text):
-    """رومن اردو کی پہچان"""
-    roman_urdu_words = [
-        'tum', 'tu', 'aap', 'wo', 'main', 'hum', 'mera', 'tera', 'hamara', 
-        'tumhara', 'uska', 'unka', 'kyun', 'kaise', 'kahan', 'kab', 'kitna',
-        'nahi', 'nhi', 'haan', 'ji', 'han', 'jee', 'acha', 'accha', 'theek',
-        'sahi', 'galat', 'shukriya', 'meherbani', 'mazeed', 'hai', 'ho',
-        'hain', 'tha', 'thi', 'the', 'lekin', 'magar', 'agar', 'kyunki',
-        'phir', 'ab', 'tab', 'jab', 'toh', 'dikh', 'sun', 'kar', 'dekh', 'likh'
+    """رومن اردو کی بہترین پہچان"""
+    roman_urdu_patterns = [
+        r'\b(tum|tu|aap|wo|main|hum|mein|mujhe)\b',
+        r'\b(mera|tera|hamara|tumhara|uska|unka|apka)\b',
+        r'\b(kyun|kaise|kahan|kab|kisne|kisko|kis|kaun)\b',
+        r'\b(nahi|nhi|haan|ji|han|jee|jeez|shukriya)\b',
+        r'\b(acha|accha|theek|sahi|galat|kharab|behtar)\b',
+        r'\b(shukriya|meherbani|mazeed|aage|phir|lekin)\b',
+        r'\b(hai|ho|hain|tha|thi|the|raha|rahi|rahe)\b',
+        r'\b(lekin|magar|agar|kyunki|warna|toh|phir)\b',
+        r'\b(phir|ab|tab|jab|toh|yahi|wahan|yahan)\b',
+        r'\b(dikh|sun|kar|dekh|likh|parh|bol|soch)\b',
+        r'\b(chahiye|chahta|chahti|karna|karti|karte)\b',
+        r'\b(gaya|gayi|gaye|aaya|aayi|aaye|liya|diya)\b'
     ]
     
     text_lower = text.lower()
-    words = text_lower.split()
-    if len(words) == 0:
-        return False
-        
-    roman_word_count = sum(1 for word in words if word in roman_urdu_words)
-    return (roman_word_count / len(words)) > 0.2
+    pattern_count = 0
+    for pattern in roman_urdu_patterns:
+        if re.search(pattern, text_lower):
+            pattern_count += 1
+    
+    return pattern_count >= 3
+
+def detect_pashto(text):
+    """پشتو کی پہچان"""
+    pashto_words = [
+        'ستا', 'زما', 'ته', 'زه', 'دی', 'شوی', 'کوي', 'کړي', 'کړل', 'شو', 
+        'څه', 'ولې', 'څنگه', 'چېرې', 'کله', 'کوم', 'څوک', 'هلک', 'نجلۍ',
+        'مينه', 'کور', 'ورک', 'لوی', 'وړوکی', 'نوی', 'زوړ', 'ښه', 'بد',
+        'سپک', 'دروند', 'تيز', 'ورک', 'اوبه', 'دې', 'نه', 'هو', 'مه'
+    ]
+    
+    # Check for Pashto characters
+    pashto_chars = set('ښړډږڅځڂېيۍئ')
+    text_chars = set(text)
+    
+    if pashto_chars.intersection(text_chars):
+        return True
+    
+    # Check for common Pashto words
+    text_words = text.split()
+    pashto_word_count = sum(1 for word in text_words if word in pashto_words)
+    
+    return pashto_word_count > 2
 
 def detect_english(text):
     """انگریزی کی پہچان"""
@@ -207,9 +218,7 @@ def detect_english(text):
         'we', 'your', 'can', 'said', 'there', 'each', 'which', 'she',
         'do', 'how', 'their', 'if', 'will', 'up', 'other', 'about', 'out',
         'many', 'then', 'them', 'these', 'so', 'some', 'her', 'would',
-        'make', 'like', 'him', 'into', 'time', 'has', 'look', 'two',
-        'more', 'write', 'go', 'see', 'number', 'no', 'way', 'could',
-        'people', 'my', 'than', 'first', 'water', 'been', 'call'
+        'make', 'like', 'him', 'into', 'time', 'has', 'look', 'two'
     ]
     
     text_lower = text.lower()
@@ -221,13 +230,49 @@ def detect_english(text):
     return (english_word_count / len(words)) > 0.3
 
 # -----------------------------
+# Translation Function
+# -----------------------------
+def translate_text(text, target_lang, source_lang='auto'):
+    """Translate text using deep-translator"""
+    try:
+        from deep_translator import GoogleTranslator
+        translated = GoogleTranslator(source=source_lang, target=target_lang).translate(text)
+        return translated
+    except Exception as e:
+        raise Exception(f"Translation error: {str(e)}")
+
+# -----------------------------
+# Enhanced Text-to-Speech Function
+# -----------------------------
+def text_to_speech(text, lang, slow=False):
+    """Convert text to speech with enhanced support for all languages"""
+    try:
+        from gtts import gTTS
+        from io import BytesIO
+        
+        # Create gTTS object
+        tts = gTTS(text=text, lang=lang, slow=slow)
+        
+        # Save to bytes buffer
+        audio_bytes = BytesIO()
+        tts.write_to_fp(audio_bytes)
+        audio_bytes.seek(0)
+        
+        return audio_bytes
+        
+    except Exception as e:
+        st.warning(f"Speech not available for {lang}: {str(e)}")
+        return None
+
+def has_speech_support(lang_code):
+    """Check if language has speech support"""
+    return lang_code in SPEECH_SUPPORTED_LANGUAGES
+
+# -----------------------------
 # Session State Management
 # -----------------------------
 if "translation_history" not in st.session_state:
     st.session_state.translation_history = []
-
-if "input_text" not in st.session_state:
-    st.session_state.input_text = ""
 
 # -----------------------------
 # Main App Interface
@@ -240,58 +285,80 @@ with st.sidebar:
     target_lang = st.selectbox(
         "🎯 Translate to",
         [lang for lang in LANGUAGES.keys() if lang != 'Auto Detect'],
-        index=list(LANGUAGES.keys()).index('Urdu')
+        index=list(LANGUAGES.keys()).index('Pashto')  # Default to Pashto
     )
     
     enable_tts = st.checkbox("🔊 Enable Text-to-Speech", value=True)
-    show_examples = st.checkbox("💡 Show Examples", value=True)
+    slow_speech = st.checkbox("🐢 Slow Speech (for learning)", value=False)
     
     st.markdown("---")
-    st.header("📊 App Info")
-    st.info("""
-    **Features:**
-    - 🤖 Auto Language Detection
-    - 📝 Roman Urdu to Urdu
-    - 🌍 100+ Languages
-    - 🔊 Text-to-Speech
-    - ⚡ Fast Translation
-    """)
+    st.header("🎯 Popular Languages")
+    
+    # Quick language buttons
+    lang_col1, lang_col2 = st.columns(2)
+    
+    with lang_col1:
+        if st.button("پشتو", use_container_width=True):
+            target_lang = 'Pashto'
+        if st.button("اردو", use_container_width=True):
+            target_lang = 'Urdu'
+        if st.button("فارسی", use_container_width=True):
+            target_lang = 'Persian (Farsi)'
+            
+    with lang_col2:
+        if st.button("English", use_container_width=True):
+            target_lang = 'English'
+        if st.button("العربية", use_container_width=True):
+            target_lang = 'Arabic'
+        if st.button("हिन्दी", use_container_width=True):
+            target_lang = 'Hindi'
+    
+    st.markdown("---")
+    st.header("📊 Speech Info")
+    
+    target_lang_code = LANGUAGES[target_lang]
+    if has_speech_support(target_lang_code):
+        st.success("✅ Speech: Available")
+    else:
+        st.warning("⚠️ Speech: Limited")
 
 # Main content
-st.success("🚀 **Simply type your text - AI will automatically detect the language and translate!**")
+st.success("🎯 **Special Feature: Pashto Speech Support | پشتو بولنے کی خصوصی سہولت**")
 
 # Input section
 input_text = st.text_area(
     "📝 Enter text to translate",
-    placeholder="Examples:\n• Roman Urdu: 'tum kaisay ho? mera naam Ahmed hai'\n• English: 'Hello, how are you? My name is Ahmed'\n• Any other language...",
-    height=150,
-    key="input_text_area"
+    placeholder="Examples:\n• Roman Urdu: 'tum kaisay ho? mera naam Ahmed hai'\n• Pashto: 'ستا نوم څه دی؟'\n• English: 'Hello, how are you?'\n• Any language...",
+    height=150
 )
 
 # Translate button
-col1, col2, col3 = st.columns([1, 2, 1])
-with col2:
-    translate_btn = st.button("🚀 TRANSLATE NOW", use_container_width=True, type="primary")
+translate_btn = st.button("🚀 TRANSLATE NOW", use_container_width=True, type="primary")
 
 # Examples section
-if show_examples:
-    st.markdown("### 💡 Quick Examples:")
-    ex_col1, ex_col2, ex_col3 = st.columns(3)
-    
-    with ex_col1:
-        if st.button("رومن اردو", use_container_width=True):
-            st.session_state.input_text = "tum kaisay ho? mera naam Ahmed hai. shukriya bahut acha."
-            st.rerun()
-    
-    with ex_col2:
-        if st.button("English", use_container_width=True):
-            st.session_state.input_text = "Hello, how are you? My name is Ahmed. Thank you very much."
-            st.rerun()
-    
-    with ex_col3:
-        if st.button("Mixed Text", use_container_width=True):
-            st.session_state.input_text = "Hello! tum kaisay ho? How are you doing today?"
-            st.rerun()
+st.markdown("### 💡 Try These Examples:")
+
+ex_col1, ex_col2, ex_col3, ex_col4 = st.columns(4)
+
+with ex_col1:
+    if st.button("رومن اردو", use_container_width=True):
+        st.session_state.input_text = "salam tum kaisay ho? mera naam Ahmed hai. kya haal hai?"
+        st.rerun()
+
+with ex_col2:
+    if st.button("پشتو", use_container_width=True):
+        st.session_state.input_text = "ستاسو نوم څه دی؟ زما نوم احمد دی۔ تاسو څنګه یاست؟"
+        st.rerun()
+
+with ex_col3:
+    if st.button("English", use_container_width=True):
+        st.session_state.input_text = "Hello, what is your name? My name is Ahmed. How are you?"
+        st.rerun()
+
+with ex_col4:
+    if st.button("فارسی", use_container_width=True):
+        st.session_state.input_text = "سلام نام شما چیست؟ نام من احمد است. حالتان چطور است؟"
+        st.rerun()
 
 st.markdown("---")
 
@@ -300,27 +367,28 @@ st.markdown("---")
 # -----------------------------
 if translate_btn and input_text.strip():
     try:
-        with st.spinner("🔍 AI is detecting language and translating..."):
-            # Language detection
+        with st.spinner("🔍 Detecting language and translating..."):
+            # Enhanced language detection
             detected_language = "Auto-Detected"
             source_lang_code = 'auto'
             
-            if detect_roman_urdu(input_text):
+            if detect_pashto(input_text):
+                detected_language = "Pashto"
+                source_lang_code = 'ps'
+                st.success("🎯 **Detected: Pashto** - Translating...")
+            elif detect_roman_urdu(input_text):
                 detected_language = "Roman Urdu"
                 source_lang_code = 'ur'
-                st.success(f"🎯 **Detected: Roman Urdu** - Converting to proper {target_lang}...")
+                st.success("🎯 **Detected: Roman Urdu** - Converting to proper text...")
             elif detect_english(input_text):
-                detected_language = "English" 
+                detected_language = "English"
                 source_lang_code = 'en'
-                st.success(f"🎯 **Detected: English** - Translating to {target_lang}...")
+                st.success("🎯 **Detected: English** - Translating...")
             else:
                 st.info("🎯 **Detected: Other Language** - Translating...")
             
             # Perform translation
-            translated_text = GoogleTranslator(
-                source=source_lang_code, 
-                target=LANGUAGES[target_lang]
-            ).translate(input_text)
+            translated_text = translate_text(input_text, LANGUAGES[target_lang], source_lang_code)
             
             # Display results
             st.subheader("🎉 Translation Result")
@@ -336,7 +404,7 @@ if translate_btn and input_text.strip():
                     key="original_display",
                     label_visibility="collapsed"
                 )
-                st.caption(f"Language: {detected_language}")
+                st.caption(f"Detected: {detected_language}")
                 
             with col2:
                 st.markdown(f"**📤 Translated Text ({target_lang})**")
@@ -349,37 +417,36 @@ if translate_btn and input_text.strip():
                 )
                 st.caption(f"Translated to: {target_lang}")
             
-            # Text-to-Speech
+            # Enhanced Text-to-Speech
             if enable_tts:
                 st.subheader("🔊 Audio Output")
                 
-                try:
-                    # Create audio for translated text
-                    tts = gTTS(translated_text, lang=LANGUAGES[target_lang])
-                    audio_file = f"output_{datetime.now().strftime('%H%M%S')}.mp3"
-                    tts.save(audio_file)
+                target_lang_code = LANGUAGES[target_lang]
+                
+                if has_speech_support(target_lang_code):
+                    audio_bytes = text_to_speech(translated_text, target_lang_code, slow_speech)
                     
-                    # Display audio player
-                    st.audio(audio_file, format="audio/mp3")
-                    st.caption(f"🎧 Listen to the {target_lang} translation")
-                    
-                    # Clean up audio file
-                    if os.path.exists(audio_file):
-                        os.remove(audio_file)
+                    if audio_bytes:
+                        st.audio(audio_bytes, format="audio/mp3")
                         
-                except Exception as e:
-                    st.warning(f"⚠️ Text-to-speech not available: {str(e)}")
-                    # Fallback to pyttsx3
-                    try:
-                        engine = pyttsx3.init()
-                        fallback_file = f"fallback_{datetime.now().strftime('%H%M%S')}.wav"
-                        engine.save_to_file(translated_text, fallback_file)
-                        engine.runAndWait()
-                        st.audio(fallback_file, format="audio/wav")
-                        if os.path.exists(fallback_file):
-                            os.remove(fallback_file)
-                    except:
-                        st.error("❌ Audio generation failed for this language")
+                        # Language-specific messages
+                        if target_lang_code == 'ps':
+                            st.success("🎧 **پشتو آواز**: پشتو زبان میں سنیں")
+                        elif target_lang_code == 'ur':
+                            st.success("🎧 **اردو آواز**: اردو زبان میں سنیں")
+                        elif target_lang_code == 'ar':
+                            st.success("🎧 **العربية صوت**: الاستماع باللغة العربية")
+                        else:
+                            st.success(f"🎧 **{target_lang} Speech**: Listen in {target_lang}")
+                    else:
+                        st.warning(f"⚠️ Audio generation failed for {target_lang}")
+                else:
+                    st.info(f"ℹ️ Speech support is limited for {target_lang}. Trying anyway...")
+                    audio_bytes = text_to_speech(translated_text, target_lang_code, slow_speech)
+                    if audio_bytes:
+                        st.audio(audio_bytes, format="audio/mp3")
+                    else:
+                        st.warning(f"❌ Speech not available for {target_lang}")
             
             # Save to history
             history_entry = {
@@ -393,14 +460,28 @@ if translate_btn and input_text.strip():
             
             # Success message
             st.balloons()
-            st.success("✅ Translation completed successfully!")
+            st.success(f"✅ Translation to {target_lang} completed successfully!")
 
     except Exception as e:
         st.error(f"❌ Translation error: {str(e)}")
-        st.info("💡 Please check your internet connection and try again.")
 
 elif translate_btn:
     st.warning("⚠️ Please enter some text to translate")
+
+# -----------------------------
+# Language Information
+# -----------------------------
+st.markdown("---")
+st.subheader("🌍 Supported Languages with Speech")
+
+# Show languages with speech support
+speech_langs = [lang for lang, code in LANGUAGES.items() 
+               if code in SPEECH_SUPPORTED_LANGUAGES and lang != 'Auto Detect']
+
+cols = st.columns(4)
+for i, lang in enumerate(speech_langs):
+    with cols[i % 4]:
+        st.markdown(f'<div class="language-box">🔊 {lang}</div>', unsafe_allow_html=True)
 
 # -----------------------------
 # Translation History
@@ -409,7 +490,6 @@ if st.session_state.translation_history:
     st.markdown("---")
     st.subheader("📚 Translation History")
     
-    # Show last 5 translations
     for i, entry in enumerate(reversed(st.session_state.translation_history[-5:])):
         with st.expander(f"🕒 {entry['timestamp']} | {entry['source']} → {entry['target']}"):
             col1, col2 = st.columns(2)
@@ -420,16 +500,12 @@ if st.session_state.translation_history:
                 st.markdown("**Translated Text:**")
                 st.write(entry['translated'])
             
-            # Audio replay button
+            # Audio replay
             if st.button(f"🔊 Play Audio", key=f"audio_{i}"):
-                try:
-                    tts = gTTS(entry['translated'], lang=LANGUAGES[entry['target']])
-                    audio_file = f"history_{i}.mp3"
-                    tts.save(audio_file)
-                    st.audio(audio_file, format="audio/mp3")
-                    # Cleanup will happen on next run
-                except:
-                    st.warning("Audio not available for this entry")
+                target_code = LANGUAGES[entry['target']]
+                audio_bytes = text_to_speech(entry['translated'], target_code)
+                if audio_bytes:
+                    st.audio(audio_bytes, format="audio/mp3")
 
 # -----------------------------
 # Footer
@@ -438,10 +514,10 @@ st.markdown("---")
 st.markdown("""
 <div style='text-align: center;'>
     <h3>🤖 AI Translator</h3>
-    <p><b>Powered by:</b> Streamlit • Google Translate • gTTS</p>
-    <p><b>Special Features:</b> Roman Urdu Detection • Auto Language Detection • Text-to-Speech • 100+ Languages</p>
-    <p>رومن اردو سے اصل اردو | انگریزی سے اردو ترجمہ | ہر زبان کے لیے آڈیو</p>
+    <p><b>Special Pashto Support | پشتو کی خصوصی سہولت</b></p>
+    <p><b>Features:</b> Pashto Speech • Roman Urdu • 100+ Languages • Text-to-Speech</p>
+    <p>پشتو بولنے کی سہولت • رومن اردو سے اصل اردو • تمام زبانوں کی آواز</p>
 </div>
 """, unsafe_allow_html=True)
 
-st.caption("© 2024 AI Translator - Built with Streamlit | Deployed on Streamlit Cloud")
+st.caption("© 2024 AI Translator - Complete Speech Support for All Languages")

@@ -59,13 +59,6 @@ st.markdown("""
         margin: 10px 0px;
         box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
     }
-    .language-selector {
-        background: #f8f9fa;
-        padding: 15px;
-        border-radius: 10px;
-        border: 2px solid #2E86AB;
-        margin: 10px 0px;
-    }
 </style>
 """, unsafe_allow_html=True)
 
@@ -94,10 +87,9 @@ def get_user_data(username):
     })
 
 # -----------------------------
-# Enhanced Language List - 1000+ Languages
+# Enhanced Language List
 # -----------------------------
 LANGUAGES = {
-    'Auto Detect': 'auto',
     'English': 'en', 
     'Urdu': 'ur',
     'Hindi': 'hi',
@@ -215,7 +207,6 @@ def extract_text_from_pdf(uploaded_file):
     """Extract text from PDF file with improved error handling"""
     try:
         text = ""
-        # First try pdfplumber
         with pdfplumber.open(uploaded_file) as pdf:
             for page in pdf.pages:
                 page_text = page.extract_text()
@@ -225,7 +216,6 @@ def extract_text_from_pdf(uploaded_file):
         if text.strip():
             return text.strip()
         
-        # Fallback to PyPDF2
         uploaded_file.seek(0)
         pdf_reader = PyPDF2.PdfReader(uploaded_file)
         for page in pdf_reader.pages:
@@ -422,15 +412,6 @@ def show_main_interface():
         st.markdown("---")
         st.markdown("### ⚙️ Settings")
         
-        # Language Statistics
-        st.markdown(f"""
-        <div class="stats-box">
-            <h4 style='margin:0;'>🌐 Language Support</h4>
-            <h3 style='margin:10px 0;'>1000+ Languages</h3>
-            <p style='margin:0; font-size:0.9rem;'>Global Coverage</p>
-        </div>
-        """, unsafe_allow_html=True)
-        
         # Speech Settings
         st.markdown("#### 🔊 Speech Settings")
         enable_tts = st.checkbox("Enable Text-to-Speech", value=True)
@@ -446,17 +427,15 @@ def show_main_interface():
     # Main Content Area
     st.markdown("### 📝 Translation Center")
     
-    # Language Selection - Only for translation direction
-    st.markdown('<div class="language-selector">', unsafe_allow_html=True)
-    col1, col2 = st.columns(2)
-    with col1:
-        target_lang = st.selectbox(
-            "Translate To",
-            [lang for lang in LANGUAGES.keys() if lang != 'Auto Detect'],
-            index=list(LANGUAGES.keys()).index("Urdu"),
-            key="target_lang_main"
-        )
-    st.markdown('</div>', unsafe_allow_html=True)
+    # Single Language Selection
+    st.markdown("#### Select Translation Language")
+    target_lang = st.selectbox(
+        "Choose target language for translation:",
+        list(LANGUAGES.keys()),
+        index=list(LANGUAGES.keys()).index("Urdu"),
+        key="target_lang_main",
+        label_visibility="collapsed"
+    )
     
     # Input Methods Tabs
     tab1, tab2 = st.tabs(["✏️ Text Translation", "📁 Document Translation"])
@@ -464,7 +443,7 @@ def show_main_interface():
     with tab1:
         input_text = st.text_area(
             "Enter text to translate:",
-            placeholder="Type or paste your text here...\nAuto-detection will identify the language automatically.",
+            placeholder="Type or paste your text here... Language will be detected automatically.",
             height=200,
             key="text_input"
         )
@@ -472,7 +451,7 @@ def show_main_interface():
         # Translate Button for Text
         if st.button("🚀 Translate Text", key="translate_text_btn", use_container_width=True, type="primary"):
             if input_text.strip():
-                perform_translation(input_text, 'Auto Detect', target_lang, enable_tts, slow_speech)
+                perform_translation(input_text, 'auto', target_lang, enable_tts, slow_speech)
             else:
                 st.warning("⚠️ Please enter some text to translate")
     
@@ -504,7 +483,7 @@ def show_main_interface():
                 
                 # Translate Button for Document
                 if st.button("🚀 Translate Document", key="translate_doc_btn", use_container_width=True, type="primary"):
-                    perform_translation(extracted_text, 'Auto Detect', target_lang, enable_tts, slow_speech, is_document=True)
+                    perform_translation(extracted_text, 'auto', target_lang, enable_tts, slow_speech, is_document=True)
             else:
                 st.error("❌ Could not extract readable text from the document")
 
@@ -515,7 +494,7 @@ def perform_translation(text, source_lang, target_lang, enable_tts, slow_speech,
     try:
         with st.spinner("🔄 Translating..."):
             # Perform translation
-            if source_lang == 'Auto Detect':
+            if source_lang == 'auto':
                 if detect_roman_urdu(text):
                     detected_source = "Roman Urdu"
                     source_code = 'ur'
@@ -545,7 +524,7 @@ def perform_translation(text, source_lang, target_lang, enable_tts, slow_speech,
             col1, col2 = st.columns(2)
             
             with col1:
-                st.markdown(f"**📥 Original Text ({detected_source})**")
+                st.markdown(f"**📥 Original Text**")
                 st.text_area(
                     "Original Content",
                     text,
@@ -553,7 +532,7 @@ def perform_translation(text, source_lang, target_lang, enable_tts, slow_speech,
                     key="original_output",
                     label_visibility="collapsed"
                 )
-                st.caption(f"Characters: {len(text)}")
+                st.caption(f"Detected Language: {detected_source} | Characters: {len(text)}")
                 
             with col2:
                 st.markdown(f"**📤 Translated Text ({target_lang})**")
@@ -679,19 +658,19 @@ else:
     
     with col1:
         st.markdown('<div class="feature-box">' +
-                    '<h4>🌍 1000+ Languages</h4>' +
-                    '<p>Support for all major world languages with auto-detection</p>' +
+                    '<h4>Auto Language Detection</h4>' +
+                    '<p>Automatically detect input language and translate to your chosen language</p>' +
                     '</div>', unsafe_allow_html=True)
     
     with col2:
         st.markdown('<div class="feature-box">' +
-                    '<h4>📁 Document Support</h4>' +
+                    '<h4>Document Support</h4>' +
                     '<p>Translate PDF, Word and text documents seamlessly</p>' +
                     '</div>', unsafe_allow_html=True)
     
     with col3:
         st.markdown('<div class="feature-box">' +
-                    '<h4>🔊 Audio Output</h4>' +
+                    '<h4>Audio Output</h4>' +
                     '<p>Listen to translations with text-to-speech technology</p>' +
                     '</div>', unsafe_allow_html=True)
     

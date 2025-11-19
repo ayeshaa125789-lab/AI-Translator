@@ -409,7 +409,6 @@ def show_main_interface():
     st.markdown('''
     <div style="text-align: center; margin-bottom: 20px;">
         <div class="language-badge">🌍 1000+ Languages Supported</div>
-        <div class="language-badge">📖 Including Pashto, Urdu, Arabic & More</div>
     </div>
     ''', unsafe_allow_html=True)
     
@@ -438,7 +437,7 @@ def show_main_interface():
         
         st.markdown("---")
         st.markdown("#### 🌍 Language Info")
-        st.info("**1000+ Languages Supported**\n\n- Pashto, Urdu, Hindi, Arabic\n- Spanish, French, German\n- Chinese, Japanese, Korean\n- And many more...")
+        st.info("**1000+ Languages Supported**\n\n- All major world languages\n- Regional and local languages\n- Technical and business languages")
         
         st.markdown("---")
         st.markdown("#### 🎯 Quick Actions")
@@ -453,26 +452,20 @@ def show_main_interface():
     # Language Selection with Enhanced Description
     st.markdown("#### Select Translation Language from 1000+ Options")
     target_lang = st.selectbox(
-        "Choose target language for translation (1000+ languages available including Pashto, Urdu, etc.):",
+        "Choose target language for translation (1000+ languages available):",
         list(LANGUAGES.keys()),
         index=list(LANGUAGES.keys()).index("Urdu"),
         key="target_lang_main"
     )
     
-    # Show selected language info
-    if target_lang == "Pashto":
-        st.success("🎯 **Pashto Selected** - Translate to Pashto language")
-    elif target_lang == "Urdu":
-        st.info("🎯 **Urdu Selected** - Translate to Urdu language")
-    
     # Input Methods Tabs
     tab1, tab2 = st.tabs(["✏️ Text Translation", "📁 Document Translation"])
     
     with tab1:
-        st.markdown("**Enter text in any language - we support 1000+ languages including Pashto, Urdu, Arabic, etc.**")
+        st.markdown("**Enter text in any language - we support 1000+ languages**")
         input_text = st.text_area(
             "Enter text to translate:",
-            placeholder="Type or paste your text here in any language... We support 1000+ languages including Pashto, Urdu, Arabic, Spanish, French, German, Chinese, Japanese, Korean and many more!",
+            placeholder="Type or paste your text here in any language... We support 1000+ languages including English, Urdu, Hindi, Arabic, Spanish, French, German, Chinese, Japanese, Korean and many more!",
             height=200,
             key="text_input"
         )
@@ -489,7 +482,7 @@ def show_main_interface():
         uploaded_file = st.file_uploader(
             "Upload document for translation (Supports 1000+ languages)",
             type=['pdf', 'txt', 'docx'],
-            help="Supported formats: PDF, TXT, DOCX - All 1000+ languages supported including Pashto, Urdu, Arabic, etc."
+            help="Supported formats: PDF, TXT, DOCX - All 1000+ languages supported"
         )
         
         if uploaded_file is not None:
@@ -689,7 +682,7 @@ else:
     with col1:
         st.markdown('<div class="feature-box">' +
                     '<h4>🌍 1000+ Languages</h4>' +
-                    '<p>Support for 1000+ languages including Pashto, Urdu, Arabic, Spanish, French and many more</p>' +
+                    '<p>Support for 1000+ languages including all major world languages</p>' +
                     '</div>', unsafe_allow_html=True)
     
     with col2:
@@ -721,7 +714,6 @@ else:
         st.write("""
         - English
         - Urdu
-        - Pashto
         - Hindi
         - Arabic
         - Spanish
@@ -729,6 +721,7 @@ else:
         - German
         - Chinese
         - Japanese
+        - Korean
         """)
     
     with col2:
@@ -741,9 +734,9 @@ else:
         - Russian
         - Portuguese
         - Italian
-        - Korean
         - Thai
         - Vietnamese
+        - Indonesian
         """)
     
     with col3:
@@ -763,7 +756,7 @@ else:
         <h4 style='color: #2E86AB; margin-bottom: 10px;'>🤖 AI Translator</h4>
         <p style='color: #666; margin-bottom: 15px;'>Professional Translation Platform - 1000+ Languages Supported</p>
         <div style='font-size: 0.9rem; color: #888;'>
-            <span>🌍 Supporting Pashto, Urdu, Arabic and 1000+ more languages</span>
+            <span>🌍 Supporting 1000+ world languages</span>
         </div>
     </div>
     """, unsafe_allow_html=True)

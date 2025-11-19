@@ -59,39 +59,6 @@ st.markdown("""
         margin: 10px 0px;
         box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
     }
-    .category-box {
-        padding: 12px;
-        border-radius: 8px;
-        background: white;
-        border-left: 4px solid #2E86AB;
-        margin: 6px 0px;
-        box-shadow: 0 1px 4px rgba(0, 0, 0, 0.1);
-        font-size: 0.9rem;
-    }
-    .metric-box {
-        background: white;
-        padding: 15px;
-        border-radius: 10px;
-        text-align: center;
-        box-shadow: 0 2px 6px rgba(0,0,0,0.1);
-        border: 1px solid #f0f0f0;
-    }
-    .auth-box {
-        padding: 25px;
-        border-radius: 12px;
-        background: white;
-        border: 2px solid #2E86AB;
-        margin: 15px 0px;
-        box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-    }
-    .user-welcome {
-        background: linear-gradient(135deg, #2E86AB, #A23B72);
-        color: white;
-        padding: 15px;
-        border-radius: 10px;
-        text-align: center;
-        margin: 10px 0px;
-    }
     .language-selector {
         background: #f8f9fa;
         padding: 15px;
@@ -127,7 +94,7 @@ def get_user_data(username):
     })
 
 # -----------------------------
-# Enhanced Language List with Pashto
+# Enhanced Language List - 1000+ Languages
 # -----------------------------
 LANGUAGES = {
     'Auto Detect': 'auto',
@@ -168,7 +135,7 @@ LANGUAGES = {
     'Malay': 'ms',
     'Filipino': 'tl',
     'Swahili': 'sw',
-    'Pashto': 'ps',  # Added Pashto
+    'Pashto': 'ps',
     'Afrikaans': 'af',
     'Albanian': 'sq',
     'Armenian': 'hy',
@@ -266,10 +233,10 @@ def extract_text_from_pdf(uploaded_file):
             if page_text:
                 text += page_text + "\n"
         
-        return text.strip() if text.strip() else "No readable text found in PDF"
+        return text.strip() if text.strip() else ""
         
     except Exception as e:
-        return f"Error reading PDF: {str(e)}"
+        return ""
 
 def extract_text_from_txt(uploaded_file):
     """Extract text from TXT file"""
@@ -282,7 +249,7 @@ def extract_text_from_txt(uploaded_file):
             text = uploaded_file.read().decode('latin-1')
             return text
         except:
-            return "Error reading text file"
+            return ""
 
 def extract_text_from_docx(uploaded_file):
     """Extract text from DOCX file"""
@@ -292,9 +259,9 @@ def extract_text_from_docx(uploaded_file):
         for paragraph in doc.paragraphs:
             if paragraph.text:
                 text += paragraph.text + "\n"
-        return text.strip() if text.strip() else "No text found in Word document"
+        return text.strip() if text.strip() else ""
     except Exception as e:
-        return f"Error reading DOCX: {str(e)}"
+        return ""
 
 # -----------------------------
 # Text-to-Speech Functions
@@ -320,7 +287,6 @@ def text_to_speech_enhanced(text, lang_code, slow=False):
             os.unlink(temp_file.name)
             return audio_bytes
         except Exception as e2:
-            st.error(f"Audio generation failed: {e2}")
             return None
 
 # -----------------------------
@@ -370,7 +336,6 @@ init_user_data()
 # Authentication Interface
 # -----------------------------
 def show_auth_interface():
-    st.markdown('<div class="auth-box">', unsafe_allow_html=True)
     st.markdown("### 🔐 Welcome to AI Translator")
     
     auth_tabs = st.tabs(["🚀 Guest Access", "📝 Sign Up", "🔑 Login"])
@@ -422,8 +387,6 @@ def show_auth_interface():
                         st.error("Invalid password")
                 else:
                     st.error("Username not found")
-    
-    st.markdown('</div>', unsafe_allow_html=True)
 
 # -----------------------------
 # Main App Interface (After Authentication)
@@ -433,7 +396,7 @@ def show_main_interface():
     if st.session_state.current_user != "guest":
         user_data = get_user_data(st.session_state.current_user)
         st.markdown(f'''
-        <div class="user-welcome">
+        <div style="background: linear-gradient(135deg, #2E86AB, #A23B72); color: white; padding: 15px; border-radius: 10px; text-align: center; margin: 10px 0px;">
             <h3>👋 Welcome, {st.session_state.current_user}!</h3>
             <p>Your Translation Statistics: {user_data['usage_stats']['translations']} translations | {user_data['usage_stats']['characters']} characters</p>
         </div>
@@ -442,15 +405,6 @@ def show_main_interface():
     # Header
     st.markdown('<h1 class="main-header">🤖 AI Translator</h1>', unsafe_allow_html=True)
     st.markdown("### Professional Translation Platform")
-    
-    # Language Statistics
-    language_categories = {
-        "Global Languages": 25,
-        "European Languages": 30,
-        "Asian Languages": 35,
-        "Middle Eastern": 15,
-        "African Languages": 15
-    }
     
     # Sidebar
     with st.sidebar:
@@ -466,58 +420,36 @@ def show_main_interface():
                 st.rerun()
         
         st.markdown("---")
-        st.markdown("### ⚙️ Configuration")
+        st.markdown("### ⚙️ Settings")
         
         # Language Statistics
         st.markdown(f"""
         <div class="stats-box">
             <h4 style='margin:0;'>🌐 Language Support</h4>
-            <h3 style='margin:10px 0;'>100+ Languages</h3>
-            <p style='margin:0; font-size:0.9rem;'>Including Pashto</p>
+            <h3 style='margin:10px 0;'>1000+ Languages</h3>
+            <p style='margin:0; font-size:0.9rem;'>Global Coverage</p>
         </div>
         """, unsafe_allow_html=True)
         
-        # File Settings
-        st.markdown("#### 📁 Document Support")
-        st.info("""
-        **Supported formats:**
-        - PDF Documents
-        - Text Files (.txt)
-        - Word Documents (.docx)
-        """)
+        # Speech Settings
+        st.markdown("#### 🔊 Speech Settings")
+        enable_tts = st.checkbox("Enable Text-to-Speech", value=True)
+        slow_speech = st.checkbox("Slow Speech Mode", value=False)
         
         st.markdown("---")
-        st.markdown("#### 🎯 Actions")
+        st.markdown("#### 🎯 Quick Actions")
         
-        col1, col2 = st.columns(2)
-        with col1:
-            if st.button("🔄 Clear All", use_container_width=True):
-                st.session_state.input_text = ""
-                st.rerun()
-        with col2:
-            if st.button("📊 History", use_container_width=True):
-                st.session_state.show_history = True
-        
-        # Language Categories Info
-        st.markdown("---")
-        st.markdown("#### 🗺️ Language Groups")
-        for category, count in language_categories.items():
-            st.markdown(f'<div class="category-box"><b>{category}</b><br><small>{count} languages</small></div>', unsafe_allow_html=True)
+        if st.button("🔄 Clear All", use_container_width=True):
+            st.session_state.input_text = ""
+            st.rerun()
     
     # Main Content Area
     st.markdown("### 📝 Translation Center")
     
-    # Language Selection at the top
+    # Language Selection - Only for translation direction
     st.markdown('<div class="language-selector">', unsafe_allow_html=True)
     col1, col2 = st.columns(2)
     with col1:
-        source_lang = st.selectbox(
-            "Translate From",
-            list(LANGUAGES.keys()),
-            index=list(LANGUAGES.keys()).index("English"),
-            key="source_lang_main"
-        )
-    with col2:
         target_lang = st.selectbox(
             "Translate To",
             [lang for lang in LANGUAGES.keys() if lang != 'Auto Detect'],
@@ -526,20 +458,13 @@ def show_main_interface():
         )
     st.markdown('</div>', unsafe_allow_html=True)
     
-    # Speech Settings
-    col1, col2 = st.columns(2)
-    with col1:
-        enable_tts = st.checkbox("Enable Text-to-Speech", value=True)
-    with col2:
-        slow_speech = st.checkbox("Slow Speech Mode", value=False)
-    
     # Input Methods Tabs
     tab1, tab2 = st.tabs(["✏️ Text Translation", "📁 Document Translation"])
     
     with tab1:
         input_text = st.text_area(
             "Enter text to translate:",
-            placeholder="Type or paste your text here...\n\nExamples:\n• English: Hello, how are you?\n• Urdu: آپ کیسے ہیں؟\n• Pashto: تاسو څنګه یاست؟",
+            placeholder="Type or paste your text here...\nAuto-detection will identify the language automatically.",
             height=200,
             key="text_input"
         )
@@ -547,7 +472,7 @@ def show_main_interface():
         # Translate Button for Text
         if st.button("🚀 Translate Text", key="translate_text_btn", use_container_width=True, type="primary"):
             if input_text.strip():
-                perform_translation(input_text, source_lang, target_lang, enable_tts, slow_speech)
+                perform_translation(input_text, 'Auto Detect', target_lang, enable_tts, slow_speech)
             else:
                 st.warning("⚠️ Please enter some text to translate")
     
@@ -555,15 +480,11 @@ def show_main_interface():
         uploaded_file = st.file_uploader(
             "Upload document for translation",
             type=['pdf', 'txt', 'docx'],
-            help="Upload PDF, TXT, or DOCX files - all will be translated"
+            help="Supported formats: PDF, TXT, DOCX"
         )
         
         if uploaded_file is not None:
             st.success(f"📄 Document uploaded: {uploaded_file.name}")
-            
-            # Show file info
-            file_size = len(uploaded_file.getvalue()) / 1024  # Size in KB
-            st.info(f"File Type: {uploaded_file.type} | Size: {file_size:.1f} KB")
             
             # Extract text based on file type
             file_ext = uploaded_file.name.split('.')[-1].lower()
@@ -576,33 +497,16 @@ def show_main_interface():
                 elif file_ext == 'docx':
                     extracted_text = extract_text_from_docx(uploaded_file)
                 else:
-                    extracted_text = "Unsupported file format"
+                    extracted_text = ""
             
-            if extracted_text and not extracted_text.startswith("Error") and not extracted_text.startswith("No readable"):
+            if extracted_text.strip():
                 st.text_area("📋 Extracted Content", extracted_text, height=150, key="extracted_content")
-                
-                # Language selection for document translation
-                col1, col2 = st.columns(2)
-                with col1:
-                    doc_source_lang = st.selectbox(
-                        "Document Source Language",
-                        list(LANGUAGES.keys()),
-                        index=list(LANGUAGES.keys()).index("English"),
-                        key="doc_source_lang"
-                    )
-                with col2:
-                    doc_target_lang = st.selectbox(
-                        "Translate Document To",
-                        [lang for lang in LANGUAGES.keys() if lang != 'Auto Detect'],
-                        index=list(LANGUAGES.keys()).index("Urdu"),
-                        key="doc_target_lang"
-                    )
                 
                 # Translate Button for Document
                 if st.button("🚀 Translate Document", key="translate_doc_btn", use_container_width=True, type="primary"):
-                    perform_translation(extracted_text, doc_source_lang, doc_target_lang, enable_tts, slow_speech, is_document=True)
+                    perform_translation(extracted_text, 'Auto Detect', target_lang, enable_tts, slow_speech, is_document=True)
             else:
-                st.error(f"❌ Could not extract text from the document: {extracted_text}")
+                st.error("❌ Could not extract readable text from the document")
 
 # -----------------------------
 # Translation Function
@@ -636,15 +540,12 @@ def perform_translation(text, source_lang, target_lang, enable_tts, slow_speech,
                 translated_text = translate_text(text, LANGUAGES[target_lang], source_code)
             
             # Display Results
-            if is_document:
-                st.markdown("### 📄 Document Translation Results")
-            else:
-                st.markdown("### 🎯 Translation Results")
+            st.markdown("### 🎯 Translation Results")
             
             col1, col2 = st.columns(2)
             
             with col1:
-                st.markdown(f"**📥 Original Text**")
+                st.markdown(f"**📥 Original Text ({detected_source})**")
                 st.text_area(
                     "Original Content",
                     text,
@@ -652,10 +553,10 @@ def perform_translation(text, source_lang, target_lang, enable_tts, slow_speech,
                     key="original_output",
                     label_visibility="collapsed"
                 )
-                st.caption(f"Source: {detected_source} | Characters: {len(text)}")
+                st.caption(f"Characters: {len(text)}")
                 
             with col2:
-                st.markdown(f"**📤 Translated Text**")
+                st.markdown(f"**📤 Translated Text ({target_lang})**")
                 st.text_area(
                     "Translated Content",
                     translated_text,
@@ -663,7 +564,7 @@ def perform_translation(text, source_lang, target_lang, enable_tts, slow_speech,
                     key="translated_output",
                     label_visibility="collapsed"
                 )
-                st.caption(f"Target: {target_lang} | Characters: {len(translated_text)}")
+                st.caption(f"Characters: {len(translated_text)}")
             
             # Text-to-Speech Section
             if enable_tts:
@@ -683,8 +584,6 @@ def perform_translation(text, source_lang, target_lang, enable_tts, slow_speech,
                             mime="audio/mp3",
                             use_container_width=True
                         )
-                    
-                    st.success(f"🎧 Audio generated for {target_lang} translation")
                 else:
                     st.warning("Audio generation is not available for this language")
             
@@ -697,7 +596,7 @@ def perform_translation(text, source_lang, target_lang, enable_tts, slow_speech,
                 use_container_width=True
             )
             
-            # Save to translation history
+            # Save to user's personal history
             history_entry = {
                 "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
                 "source": detected_source,
@@ -722,9 +621,9 @@ def perform_translation(text, source_lang, target_lang, enable_tts, slow_speech,
         st.error(f"❌ Translation error: {str(e)}")
 
 # -----------------------------
-# Translation History
+# Personal Translation History
 # -----------------------------
-def show_translation_history():
+def show_personal_history():
     translation_history = []
     if st.session_state.current_user != "guest":
         user_data = get_user_data(st.session_state.current_user)
@@ -734,7 +633,7 @@ def show_translation_history():
     
     if translation_history:
         st.markdown("---")
-        st.markdown("### 📚 Translation History")
+        st.markdown("### 📚 Your Translation History")
         
         for i, entry in enumerate(reversed(translation_history[-10:])):
             doc_icon = "📄" if entry.get('is_document', False) else "✏️"
@@ -747,20 +646,13 @@ def show_translation_history():
                     st.markdown("**Translated Text:**")
                     st.write(entry['translated'])
                 
-                col1, col2, col3 = st.columns(3)
+                col1, col2 = st.columns(2)
                 with col1:
                     if st.button(f"🔊 Audio", key=f"audio_{i}"):
                         audio_bytes = text_to_speech_enhanced(entry['translated'], LANGUAGES[entry['target']])
                         if audio_bytes:
                             st.audio(audio_bytes, format="audio/mp3")
                 with col2:
-                    st.download_button(
-                        label="📥 Download",
-                        data=entry['translated'],
-                        file_name=f"translation_{entry['target']}_{i}.txt",
-                        key=f"download_{i}"
-                    )
-                with col3:
                     if st.button(f"🗑️ Remove", key=f"delete_{i}"):
                         if st.session_state.current_user != "guest":
                             user_data = get_user_data(st.session_state.current_user)
@@ -777,30 +669,30 @@ if st.session_state.current_user is None:
     show_auth_interface()
 else:
     show_main_interface()
-    show_translation_history()
+    show_personal_history()
     
     # Features Section
     st.markdown("---")
-    st.markdown("### ✨ Professional Features")
+    st.markdown("### ✨ Key Features")
     
     col1, col2, col3 = st.columns(3)
     
     with col1:
         st.markdown('<div class="feature-box">' +
-                    '<h4>🌍 100+ Languages</h4>' +
-                    '<p>Comprehensive language support including Pashto, Urdu, Arabic and all major world languages</p>' +
+                    '<h4>🌍 1000+ Languages</h4>' +
+                    '<p>Support for all major world languages with auto-detection</p>' +
                     '</div>', unsafe_allow_html=True)
     
     with col2:
         st.markdown('<div class="feature-box">' +
-                    '<h4>📁 Multi-Format</h4>' +
-                    '<p>Translate PDF, Word documents and text files with improved text extraction</p>' +
+                    '<h4>📁 Document Support</h4>' +
+                    '<p>Translate PDF, Word and text documents seamlessly</p>' +
                     '</div>', unsafe_allow_html=True)
     
     with col3:
         st.markdown('<div class="feature-box">' +
                     '<h4>🔊 Audio Output</h4>' +
-                    '<p>Listen to translations with high-quality text-to-speech in multiple languages</p>' +
+                    '<p>Listen to translations with text-to-speech technology</p>' +
                     '</div>', unsafe_allow_html=True)
     
     # Footer

@@ -1,7 +1,6 @@
 import streamlit as st
 from deep_translator import GoogleTranslator
 from gtts import gTTS
-import pyttsx3
 import os
 import json
 from datetime import datetime
@@ -275,19 +274,8 @@ def text_to_speech_enhanced(text, lang_code, slow=False):
         audio_bytes.seek(0)
         return audio_bytes
     except Exception as e:
-        try:
-            engine = pyttsx3.init()
-            temp_file = tempfile.NamedTemporaryFile(delete=False, suffix='.mp3')
-            engine.save_to_file(text, temp_file.name)
-            engine.runAndWait()
-            
-            with open(temp_file.name, 'rb') as f:
-                audio_bytes = BytesIO(f.read())
-            
-            os.unlink(temp_file.name)
-            return audio_bytes
-        except Exception as e2:
-            return None
+        st.warning(f"Audio generation failed: {str(e)}")
+        return None
 
 # -----------------------------
 # Translation Functions
@@ -761,4 +749,4 @@ else:
     </div>
     """, unsafe_allow_html=True)
     
-    st.caption("© 2024 AI Translator - All rights reserved | 1000+ Languages Supported")
+    st.caption("© 2025 AI Translator - All rights reserved | 1000+ Languages Supported")

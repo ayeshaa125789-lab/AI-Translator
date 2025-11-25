@@ -749,4 +749,4 @@ else:
     </div>
     """, unsafe_allow_html=True)
     
-    st.caption("© 2025 AI Translator - All rights reserved | 1000+ Languages Supported")
+    st.caption("© 2024 AI Translator - All rights reserved | 1000+ Languages Supported")

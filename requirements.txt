@@ -2,6 +2,9 @@ streamlit==1.28.0
 deep-translator==1.11.4
 gtts==2.3.2
 pyttsx3==2.90
-pypdf2==3.0.1
+PyPDF2==3.0.1
 pdfplumber==0.10.3
-python-docx==1.1.0
+python-docx==0.8.11
+pillow==10.0.1
+requests==2.31.0
+urllib3==1.26.18

@@ -340,10 +340,10 @@ if "current_page" not in st.session_state:
 # Main Translator Interface
 # -----------------------------
 def show_translator():
-    # Header
+    # Header - Only name at top
     st.markdown('<h1 class="main-header">AI Translator</h1>', unsafe_allow_html=True)
     
-    # Stats in single row
+    # Stats cards moved below the header
     col1, col2, col3, col4 = st.columns(4)
     
     with col1:
@@ -383,8 +383,8 @@ def show_translator():
     with st.container():
         st.markdown('<div class="translation-container">', unsafe_allow_html=True)
         
-        # Only Target Language Selection
-        st.markdown("### Select Target Language")
+        # Only Target Language Selection - Simple and clean
+        st.markdown("### Select Translation Language")
         target_lang = st.selectbox(
             "Choose language to translate to:",
             list(LANGUAGES.keys()),
@@ -392,7 +392,8 @@ def show_translator():
             key="target_lang"
         )
         
-        st.info("🌍 Source language will be automatically detected from your input text")
+        # Info message about auto detection
+        st.info("🌍 Source language will be automatically detected from your input")
         
         # Tabs for Text and Document Translation
         tab1, tab2 = st.tabs(["📝 Text Translation", "📁 Document Translation"])
@@ -402,17 +403,19 @@ def show_translator():
             col1, col2 = st.columns(2)
             
             with col1:
+                st.markdown("#### Input Text")
                 input_text = st.text_area(
-                    "Input Text",
-                    placeholder="Enter text in any language...",
+                    "Enter your text here...",
+                    placeholder="Type or paste text in any language...",
                     height=250,
-                    key="input_text"
+                    key="input_text",
+                    label_visibility="collapsed"
                 )
                 
                 # Translate button below input text
-                if st.button("Translate Text", use_container_width=True, type="primary"):
+                if st.button("🚀 Translate Text", use_container_width=True, type="primary"):
                     if input_text.strip():
-                        with st.spinner("Translating..."):
+                        with st.spinner("🔄 Translating..."):
                             try:
                                 # Always use auto detect for source language
                                 translated_text = translate_text(input_text, LANGUAGES[target_lang], 'auto')
@@ -428,21 +431,23 @@ def show_translator():
                                 st.session_state.translation_history.append(history_entry)
                                 
                                 st.session_state.translated_text = translated_text
-                                st.success("Translation completed!")
+                                st.success("✅ Translation completed!")
                                 st.rerun()
                                 
                             except Exception as e:
-                                st.error(f"Translation error: {str(e)}")
+                                st.error(f"❌ Translation error: {str(e)}")
                     else:
-                        st.warning("Please enter some text to translate")
+                        st.warning("⚠️ Please enter some text to translate")
             
             with col2:
+                st.markdown(f"#### Translated Text - {target_lang}")
                 if 'translated_text' in st.session_state:
                     st.text_area(
-                        f"Translated Text - {target_lang}",
+                        "Translated text will appear here...",
                         value=st.session_state.translated_text,
                         height=250,
-                        key="translated_output"
+                        key="translated_output",
+                        label_visibility="collapsed"
                     )
                     
                     # Action buttons below translated text
@@ -453,57 +458,60 @@ def show_translator():
                             st.audio(audio_bytes, format="audio/mp3")
                     with col2:
                         st.download_button(
-                            "Download Text",
+                            "📥 Download Text",
                             data=st.session_state.translated_text,
                             file_name=f"translation_{target_lang}.txt",
                             use_container_width=True
                         )
                 else:
-                    st.info("Translation will appear here")
+                    st.info("🔤 Translation will appear here after you click the translate button")
         
         with tab2:
             # Document Translation in second tab
             col1, col2 = st.columns([2, 1])
             
             with col1:
+                st.markdown("#### Upload Document")
                 uploaded_file = st.file_uploader(
-                    "Upload Document (PDF, TXT, DOCX)",
+                    "Choose a file...",
                     type=['pdf', 'txt', 'docx'],
                     label_visibility="collapsed"
                 )
                 
                 if uploaded_file is not None:
-                    st.success(f"Uploaded: {uploaded_file.name}")
+                    st.success(f"✅ Uploaded: {uploaded_file.name}")
                     
-                    with st.spinner("Extracting text..."):
+                    with st.spinner("📖 Extracting text..."):
                         extracted_text = extract_text_from_file(uploaded_file)
                     
                     if extracted_text.strip():
-                        with st.expander("View Extracted Content"):
+                        with st.expander("📋 View Extracted Content"):
                             st.text_area("Extracted Text", extracted_text, height=150, label_visibility="collapsed")
                         
-                        if st.button("Translate Document", use_container_width=True):
-                            with st.spinner("Translating document..."):
+                        if st.button("🚀 Translate Document", use_container_width=True):
+                            with st.spinner("🔄 Translating document..."):
                                 try:
                                     # Always use auto detect for source language
                                     translated_doc = translate_text(extracted_text, LANGUAGES[target_lang], 'auto')
                                     
-                                    st.success("Document translation completed!")
+                                    st.success("✅ Document translation completed!")
                                     
-                                    with st.expander("View Translated Document"):
+                                    with st.expander("📄 View Translated Document"):
                                         st.text_area("Translated Document", translated_doc, height=200, label_visibility="collapsed")
                                     
                                     st.download_button(
-                                        "Download Translated Document",
+                                        "📥 Download Translated Document",
                                         data=translated_doc,
                                         file_name=f"translated_{uploaded_file.name.split('.')[0]}.txt",
                                         use_container_width=True
                                     )
                                     
                                 except Exception as e:
-                                    st.error(f"Document translation failed: {str(e)}")
+                                    st.error(f"❌ Document translation failed: {str(e)}")
                     else:
-                        st.error("Could not extract text from the document")
+                        st.error("❌ Could not extract text from the document")
+                else:
+                    st.info("📁 Upload a PDF, TXT, or DOCX file to translate")
             
             with col2:
                 st.markdown("""

@@ -330,9 +330,6 @@ if "translation_history" not in st.session_state:
 if "input_text" not in st.session_state:
     st.session_state.input_text = ""
 
-if "source_lang" not in st.session_state:
-    st.session_state.source_lang = "Auto Detect"
-
 if "target_lang" not in st.session_state:
     st.session_state.target_lang = "Urdu"
 
@@ -386,34 +383,16 @@ def show_translator():
     with st.container():
         st.markdown('<div class="translation-container">', unsafe_allow_html=True)
         
-        # Language Selection at top
-        col1, col2, col3 = st.columns([2, 1, 2])
+        # Only Target Language Selection
+        st.markdown("### Select Target Language")
+        target_lang = st.selectbox(
+            "Choose language to translate to:",
+            list(LANGUAGES.keys()),
+            index=list(LANGUAGES.keys()).index("Urdu"),
+            key="target_lang"
+        )
         
-        with col1:
-            source_lang = st.selectbox(
-                "Source Language",
-                ["Auto Detect"] + list(LANGUAGES.keys()),
-                index=0,
-                key="source_lang"
-            )
-        
-        with col2:
-            st.markdown("<div style='display: flex; justify-content: center; align-items: center; height: 80px;'>", unsafe_allow_html=True)
-            if st.button("🔄", help="Swap Languages", key="swap_btn"):
-                if source_lang != "Auto Detect":
-                    current_target = st.session_state.target_lang
-                    st.session_state.target_lang = source_lang
-                    st.session_state.source_lang = current_target
-                    st.rerun()
-            st.markdown("</div>", unsafe_allow_html=True)
-        
-        with col3:
-            target_lang = st.selectbox(
-                "Target Language",
-                list(LANGUAGES.keys()),
-                index=list(LANGUAGES.keys()).index("Urdu"),
-                key="target_lang"
-            )
+        st.info("🌍 Source language will be automatically detected from your input text")
         
         # Tabs for Text and Document Translation
         tab1, tab2 = st.tabs(["📝 Text Translation", "📁 Document Translation"])
@@ -425,7 +404,7 @@ def show_translator():
             with col1:
                 input_text = st.text_area(
                     "Input Text",
-                    placeholder="Enter text to translate...",
+                    placeholder="Enter text in any language...",
                     height=250,
                     key="input_text"
                 )
@@ -435,12 +414,12 @@ def show_translator():
                     if input_text.strip():
                         with st.spinner("Translating..."):
                             try:
-                                source_code = 'auto' if source_lang == "Auto Detect" else LANGUAGES[source_lang]
-                                translated_text = translate_text(input_text, LANGUAGES[target_lang], source_code)
+                                # Always use auto detect for source language
+                                translated_text = translate_text(input_text, LANGUAGES[target_lang], 'auto')
                                 
                                 history_entry = {
                                     "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-                                    "source": source_lang,
+                                    "source": "Auto Detected",
                                     "target": target_lang,
                                     "original": input_text[:500],
                                     "translated": translated_text[:500],
@@ -460,7 +439,7 @@ def show_translator():
             with col2:
                 if 'translated_text' in st.session_state:
                     st.text_area(
-                        "Translated Text",
+                        f"Translated Text - {target_lang}",
                         value=st.session_state.translated_text,
                         height=250,
                         key="translated_output"
@@ -506,8 +485,8 @@ def show_translator():
                         if st.button("Translate Document", use_container_width=True):
                             with st.spinner("Translating document..."):
                                 try:
-                                    source_code = 'auto' if source_lang == "Auto Detect" else LANGUAGES[source_lang]
-                                    translated_doc = translate_text(extracted_text, LANGUAGES[target_lang], source_code)
+                                    # Always use auto detect for source language
+                                    translated_doc = translate_text(extracted_text, LANGUAGES[target_lang], 'auto')
                                     
                                     st.success("Document translation completed!")
                                     
@@ -616,7 +595,6 @@ def show_history_page():
             with col2:
                 if st.button(f"🔄 Reuse", key=f"reuse_{i}"):
                     st.session_state.input_text = entry['original']
-                    st.session_state.source_lang = entry['source']
                     st.session_state.target_lang = entry['target']
                     st.session_state.current_page = "Translator"
                     st.rerun()

@@ -10,7 +10,6 @@ import pdfplumber
 from docx import Document
 import tempfile
 import hashlib
-import docx2txt
 
 # -----------------------------
 # App Configuration
@@ -234,13 +233,11 @@ def extract_text_from_docx(uploaded_file):
 
 def extract_text_from_doc(uploaded_file):
     try:
-        with tempfile.NamedTemporaryFile(delete=False, suffix='.doc') as temp_file:
-            temp_file.write(uploaded_file.read())
-            temp_file_path = temp_file.name
-        
-        text = docx2txt.process(temp_file_path)
-        os.unlink(temp_file_path)
-        return text.strip() if text.strip() else ""
+        # For .doc files, we'll use a simple approach
+        # Note: .doc files are complex and may require additional libraries
+        # This is a basic implementation
+        st.warning(".doc file support is limited. For better results, convert to .docx or .pdf")
+        return "DOC file format detected. Please convert to PDF, DOCX or TXT for better translation results."
     except:
         return ""
 
@@ -256,7 +253,7 @@ def extract_text_from_file(uploaded_file):
     elif file_ext == 'doc':
         return extract_text_from_doc(uploaded_file)
     else:
-        return ""
+        return f"Unsupported file format: {file_ext}"
 
 # -----------------------------
 # Text-to-Speech Function
@@ -445,8 +442,8 @@ def show_dashboard():
         
         with col1:
             uploaded_file = st.file_uploader(
-                "Upload Document (PDF, TXT, DOCX, DOC)",
-                type=['pdf', 'txt', 'docx', 'doc']
+                "Upload Document (PDF, TXT, DOCX)",
+                type=['pdf', 'txt', 'docx']
             )
             
             if uploaded_file is not None:
@@ -457,7 +454,7 @@ def show_dashboard():
                 
                 if extracted_text.strip():
                     with st.expander("View Extracted Content"):
-                        st.text_area("Extracted Text", extracted_text, height=150)
+                        st.text_area("Extracted Text", extracted_text, height=150, label_visibility="collapsed")
                     
                     if st.button("Translate Document", use_container_width=True):
                         with st.spinner("Translating..."):
@@ -468,7 +465,7 @@ def show_dashboard():
                                 st.success("Document translation completed!")
                                 
                                 with st.expander("View Translated Document"):
-                                    st.text_area("Translated Document", translated_doc, height=200)
+                                    st.text_area("Translated Document", translated_doc, height=200, label_visibility="collapsed")
                                 
                                 st.download_button(
                                     "Download Translated Document",
@@ -489,7 +486,6 @@ def show_dashboard():
                 <p>• PDF Files</p>
                 <p>• TXT Files</p>
                 <p>• DOCX Files</p>
-                <p>• DOC Files</p>
             </div>
             """, unsafe_allow_html=True)
 

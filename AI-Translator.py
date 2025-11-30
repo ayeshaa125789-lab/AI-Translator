@@ -1,3 +1,4 @@
+# professional_ai_translator.py
 import streamlit as st
 from deep_translator import GoogleTranslator
 from gtts import gTTS
@@ -7,7 +8,6 @@ from datetime import datetime
 import re
 from io import BytesIO
 import base64
-import PyPDF2
 import pdfplumber
 from docx import Document
 import tempfile
@@ -18,224 +18,106 @@ import docx2txt
 # App Configuration
 # -----------------------------
 st.set_page_config(
-    page_title="AI Translator - Multilingual Translation Platform",
+    page_title="AI Translator - Professional",
     page_icon="🌐",
     layout="wide",
     initial_sidebar_state="expanded"
 )
 
-# Professional Enterprise CSS
+# -----------------------------
+# Styles (Professional)
+# -----------------------------
 st.markdown("""
 <style>
-    /* Main Header */
-    .main-header {
-        font-size: 2.8rem;
-        font-weight: 700;
-        text-align: center;
-        margin-bottom: 0.5rem;
-        background: linear-gradient(135deg, #2b5876 0%, #4e4376 100%);
-        -webkit-background-clip: text;
-        -webkit-text-fill-color: transparent;
-        background-clip: text;
-    }
-    
-    .sub-header {
-        font-size: 1.2rem;
-        color: #6c757d;
-        text-align: center;
-        margin-bottom: 2rem;
-        font-weight: 400;
-    }
-    
-    /* Professional Cards */
-    .stats-card {
-        background: white;
-        padding: 25px;
-        border-radius: 15px;
-        text-align: center;
-        margin: 10px 0;
-        box-shadow: 0 4px 20px rgba(0,0,0,0.08);
-        border: 1px solid #e0e0e0;
-        transition: transform 0.2s ease;
-    }
-    
-    .stats-card:hover {
-        transform: translateY(-5px);
-        box-shadow: 0 8px 30px rgba(0,0,0,0.12);
-    }
-    
-    .feature-card {
-        background: white;
-        padding: 25px;
-        border-radius: 15px;
-        margin: 10px 0;
-        box-shadow: 0 4px 20px rgba(0,0,0,0.08);
-        border-left: 4px solid #2b5876;
-        transition: all 0.3s ease;
-    }
-    
-    .feature-card:hover {
-        border-left-color: #4e4376;
-        box-shadow: 0 8px 30px rgba(0,0,0,0.12);
-    }
-    
-    /* Translation Container */
-    .translation-container {
-        background: white;
-        border-radius: 15px;
-        padding: 30px;
-        margin: 20px 0;
-        box-shadow: 0 4px 20px rgba(0,0,0,0.08);
-        border: 1px solid #e0e0e0;
-    }
-    
-    /* Text Areas */
-    .text-input {
-        border: 2px solid #e0e0e0;
-        border-radius: 10px;
-        padding: 20px;
-        background: #fafafa;
-        min-height: 200px;
-        font-size: 14px;
-        line-height: 1.6;
-        font-family: 'Inter', sans-serif;
-        transition: border-color 0.3s ease;
-    }
-    
-    .text-input:focus {
-        border-color: #2b5876;
-        background: white;
-    }
-    
-    /* Buttons */
-    .primary-btn {
-        background: linear-gradient(135deg, #2b5876 0%, #4e4376 100%);
-        color: white;
-        border: none;
-        border-radius: 8px;
-        padding: 12px 30px;
-        font-size: 14px;
-        font-weight: 600;
-        cursor: pointer;
-        transition: all 0.3s ease;
-        width: 100%;
-    }
-    
-    .primary-btn:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 6px 20px rgba(43, 88, 118, 0.3);
-    }
-    
-    .secondary-btn {
-        background: white;
-        color: #2b5876;
-        border: 2px solid #2b5876;
-        border-radius: 8px;
-        padding: 10px 20px;
-        font-size: 13px;
-        font-weight: 600;
-        cursor: pointer;
-        transition: all 0.3s ease;
-        width: 100%;
-    }
-    
-    .secondary-btn:hover {
-        background: #2b5876;
-        color: white;
-    }
-    
-    /* Stats Numbers */
-    .stat-number {
-        font-size: 2.5rem;
-        font-weight: 700;
-        margin-bottom: 5px;
-        color: #2b5876;
-    }
-    
-    .stat-label {
-        font-size: 0.9rem;
-        font-weight: 600;
-        color: #6c757d;
-        text-transform: uppercase;
-        letter-spacing: 0.5px;
-    }
-    
-    /* File Upload */
-    .upload-area {
-        background: #f8f9fa;
-        border: 2px dashed #dee2e6;
-        border-radius: 10px;
-        padding: 40px;
-        text-align: center;
-        margin: 20px 0;
-        transition: all 0.3s ease;
-    }
-    
-    .upload-area:hover {
-        border-color: #2b5876;
-        background: #f0f4f8;
-    }
-    
-    /* Sidebar */
-    .sidebar-section {
-        background: white;
-        padding: 20px;
-        border-radius: 10px;
-        margin: 15px 0;
-        box-shadow: 0 2px 10px rgba(0,0,0,0.05);
-        border: 1px solid #e0e0e0;
-    }
-    
-    /* History Items */
-    .history-item {
-        background: white;
-        border-left: 3px solid #2b5876;
-        border-radius: 8px;
-        padding: 15px;
-        margin: 10px 0;
-        box-shadow: 0 2px 8px rgba(0,0,0,0.05);
-        transition: all 0.3s ease;
-    }
-    
-    .history-item:hover {
-        border-left-color: #4e4376;
-        box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-    }
-    
-    /* Responsive Design */
-    @media (max-width: 768px) {
-        .main-header {
-            font-size: 2rem;
-        }
-        .stat-number {
-            font-size: 2rem;
-        }
-        .translation-container {
-            padding: 20px;
-        }
-    }
-    
-    /* Section Headers */
-    .section-header {
-        font-size: 1.5rem;
-        font-weight: 600;
-        color: #2b5876;
-        margin: 30px 0 20px 0;
-        padding-bottom: 10px;
-        border-bottom: 2px solid #e0e0e0;
-    }
-    
-    /* Feature Icons */
-    .feature-icon {
-        font-size: 2rem;
-        margin-bottom: 10px;
-        color: #2b5876;
-    }
+/* Global font */
+* { font-family: 'Inter', sans-serif; }
+
+/* Header */
+.main-header {
+  font-size: 2.6rem;
+  font-weight: 800;
+  text-align: left;
+  color: transparent;
+  background: linear-gradient(90deg,#4e4376,#2b5876);
+  -webkit-background-clip: text;
+  margin-bottom: 0.1rem;
+}
+.sub-header {
+  color: #6b7280;
+  margin-top: -6px;
+  margin-bottom: 18px;
+}
+
+/* Card */
+.card {
+  background: #ffffff;
+  padding: 20px;
+  border-radius: 14px;
+  box-shadow: 0 8px 30px rgba(11,15,26,0.06);
+  border: 1px solid #e6e9ef;
+}
+
+/* stats */
+.stats {
+  padding: 18px;
+  border-radius: 12px;
+  text-align: center;
+}
+
+/* section title */
+.section-title {
+  font-size: 1.25rem;
+  color: #234;
+  font-weight: 700;
+  margin-bottom: 12px;
+}
+
+/* textarea */
+textarea {
+  background: #fbfdff !important;
+  border: 1px solid #e6eef8 !important;
+  border-radius: 10px !important;
+  padding: 14px !important;
+  font-size: 14px !important;
+}
+
+/* upload */
+.upload-area {
+  padding: 22px;
+  border-radius: 12px;
+  border: 2px dashed #e6eef8;
+  text-align: center;
+  background: #fbfdff;
+}
+
+/* buttons */
+.stButton>button {
+  background: linear-gradient(90deg,#4e4376,#2b5876) !important;
+  color: white !important;
+  border-radius: 10px !important;
+  padding: 10px 14px !important;
+  font-weight: 700 !important;
+}
+
+/* small helper text */
+.helper {
+  color: #6b7280;
+  font-size: 0.88rem;
+}
+
+/* history item */
+.history-item {
+  border-left: 4px solid #4e4376;
+  border-radius: 8px;
+  padding: 12px;
+  margin-bottom: 10px;
+  background: #fff;
+}
 </style>
 """, unsafe_allow_html=True)
 
 # -----------------------------
-# Authentication System
+# Utilities & Session init
 # -----------------------------
 def hash_password(password):
     return hashlib.sha256(password.encode()).hexdigest()
@@ -248,132 +130,40 @@ def init_user_data():
     if 'user_data' not in st.session_state:
         st.session_state.user_data = {}
 
-def save_user_data(username, data):
-    st.session_state.user_data[username] = data
+init_user_data()
 
-def get_user_data(username):
-    return st.session_state.user_data.get(username, {
-        'translation_history': [],
-        'preferences': {},
-        'usage_stats': {'translations': 0, 'characters': 0, 'documents': 0}
-    })
+if "translation_history" not in st.session_state:
+    st.session_state.translation_history = []
+
+if "input_text" not in st.session_state:
+    st.session_state.input_text = ""
+
+if "target_lang" not in st.session_state:
+    st.session_state.target_lang = "Urdu"
+
+if "current_page" not in st.session_state:
+    st.session_state.current_page = "Dashboard"
 
 # -----------------------------
-# Enhanced Language List (1000+ Languages)
+# Languages (subset + expandable)
 # -----------------------------
 LANGUAGES = {
-    'English': 'en', 
-    'Urdu': 'ur',
-    'Hindi': 'hi',
-    'Arabic': 'ar',
-    'Spanish': 'es', 
-    'French': 'fr', 
-    'German': 'de',
-    'Chinese (Simplified)': 'zh-CN',
-    'Chinese (Traditional)': 'zh-TW',
-    'Japanese': 'ja',
-    'Korean': 'ko',
-    'Russian': 'ru',
-    'Portuguese': 'pt',
-    'Italian': 'it',
-    'Dutch': 'nl',
-    'Greek': 'el',
-    'Hebrew': 'he',
-    'Turkish': 'tr',
-    'Polish': 'pl',
-    'Ukrainian': 'uk',
-    'Romanian': 'ro',
-    'Persian': 'fa',
-    'Bengali': 'bn',
-    'Punjabi': 'pa',
-    'Marathi': 'mr',
-    'Gujarati': 'gu',
-    'Tamil': 'ta',
-    'Telugu': 'te',
-    'Kannada': 'kn',
-    'Malayalam': 'ml',
-    'Sinhala': 'si',
-    'Thai': 'th',
-    'Vietnamese': 'vi',
-    'Indonesian': 'id',
-    'Malay': 'ms',
-    'Filipino': 'tl',
-    'Swahili': 'sw',
-    'Pashto': 'ps',
-    'Afrikaans': 'af',
-    'Albanian': 'sq',
-    'Armenian': 'hy',
-    'Azerbaijani': 'az',
-    'Basque': 'eu',
-    'Belarusian': 'be',
-    'Bosnian': 'bs',
-    'Bulgarian': 'bg',
-    'Catalan': 'ca',
-    'Cebuano': 'ceb',
-    'Chichewa': 'ny',
-    'Corsican': 'co',
-    'Croatian': 'hr',
-    'Czech': 'cs',
-    'Danish': 'da',
-    'Esperanto': 'eo',
-    'Estonian': 'et',
-    'Finnish': 'fi',
-    'Frisian': 'fy',
-    'Galician': 'gl',
-    'Georgian': 'ka',
-    'Haitian Creole': 'ht',
-    'Hausa': 'ha',
-    'Hawaiian': 'haw',
-    'Hmong': 'hmn',
-    'Hungarian': 'hu',
-    'Icelandic': 'is',
-    'Igbo': 'ig',
-    'Irish': 'ga',
-    'Javanese': 'jw',
-    'Kazakh': 'kk',
-    'Khmer': 'km',
-    'Kinyarwanda': 'rw',
-    'Kurdish': 'ku',
-    'Kyrgyz': 'ky',
-    'Lao': 'lo',
-    'Latin': 'la',
-    'Latvian': 'lv',
-    'Lithuanian': 'lt',
-    'Luxembourgish': 'lb',
-    'Macedonian': 'mk',
-    'Malagasy': 'mg',
-    'Maltese': 'mt',
-    'Maori': 'mi',
-    'Mongolian': 'mn',
-    'Myanmar (Burmese)': 'my',
-    'Nepali': 'ne',
-    'Norwegian': 'no',
-    'Odia (Oriya)': 'or',
-    'Samoan': 'sm',
-    'Scots Gaelic': 'gd',
-    'Serbian': 'sr',
-    'Sesotho': 'st',
-    'Shona': 'sn',
-    'Sindhi': 'sd',
-    'Slovak': 'sk',
-    'Slovenian': 'sl',
-    'Somali': 'so',
-    'Sundanese': 'su',
-    'Swedish': 'sv',
-    'Tajik': 'tg',
-    'Tatar': 'tt',
-    'Turkmen': 'tk',
-    'Uyghur': 'ug',
-    'Uzbek': 'uz',
-    'Welsh': 'cy',
-    'Xhosa': 'xh',
-    'Yiddish': 'yi',
-    'Yoruba': 'yo',
-    'Zulu': 'zu'
+    'English': 'en', 'Urdu': 'ur', 'Hindi': 'hi', 'Arabic': 'ar',
+    'Spanish': 'es', 'French': 'fr', 'German': 'de',
+    'Chinese (Simplified)': 'zh-CN', 'Chinese (Traditional)': 'zh-TW',
+    'Japanese': 'ja', 'Korean': 'ko', 'Russian': 'ru',
+    'Portuguese': 'pt', 'Italian': 'it', 'Dutch': 'nl',
+    'Turkish': 'tr', 'Polish': 'pl', 'Persian': 'fa',
+    'Bengali': 'bn', 'Punjabi': 'pa', 'Gujarati': 'gu',
+    'Tamil': 'ta', 'Telugu': 'te', 'Malayalam': 'ml',
+    'Thai': 'th', 'Vietnamese': 'vi', 'Indonesian': 'id',
+    'Malay': 'ms', 'Swahili': 'sw', 'Pashto': 'ps',
+    'Sindhi': 'sd', 'Kannada': 'kn', 'Marathi': 'mr',
+    # add more if required
 }
 
 # -----------------------------
-# File Processing Functions (Enhanced with DOC support)
+# File extraction functions
 # -----------------------------
 def extract_text_from_pdf(uploaded_file):
     try:
@@ -384,7 +174,7 @@ def extract_text_from_pdf(uploaded_file):
                 if page_text:
                     text += page_text + "\n"
         return text.strip() if text.strip() else ""
-    except Exception as e:
+    except Exception:
         return ""
 
 def extract_text_from_txt(uploaded_file):
@@ -392,8 +182,8 @@ def extract_text_from_txt(uploaded_file):
         text = uploaded_file.read().decode('utf-8')
         return text
     except:
-        uploaded_file.seek(0)
         try:
+            uploaded_file.seek(0)
             text = uploaded_file.read().decode('latin-1')
             return text
         except:
@@ -407,30 +197,22 @@ def extract_text_from_docx(uploaded_file):
             if paragraph.text:
                 text += paragraph.text + "\n"
         return text.strip() if text.strip() else ""
-    except Exception as e:
+    except Exception:
         return ""
 
 def extract_text_from_doc(uploaded_file):
     try:
-        # Create a temporary file to save the uploaded .doc file
         with tempfile.NamedTemporaryFile(delete=False, suffix='.doc') as temp_file:
             temp_file.write(uploaded_file.read())
             temp_file_path = temp_file.name
-        
-        # Use docx2txt to extract text from .doc file
         text = docx2txt.process(temp_file_path)
-        
-        # Clean up temporary file
         os.unlink(temp_file_path)
-        
         return text.strip() if text.strip() else ""
-    except Exception as e:
+    except Exception:
         return ""
 
 def extract_text_from_file(uploaded_file):
-    """Universal file text extraction function"""
     file_ext = uploaded_file.name.split('.')[-1].lower()
-    
     if file_ext == 'pdf':
         return extract_text_from_pdf(uploaded_file)
     elif file_ext == 'txt':
@@ -443,7 +225,7 @@ def extract_text_from_file(uploaded_file):
         return ""
 
 # -----------------------------
-# Text-to-Speech Function
+# TTS
 # -----------------------------
 def text_to_speech(text, lang_code):
     try:
@@ -452,24 +234,22 @@ def text_to_speech(text, lang_code):
         tts.write_to_fp(audio_bytes)
         audio_bytes.seek(0)
         return audio_bytes
-    except Exception as e:
+    except Exception:
         return None
 
 # -----------------------------
-# Translation Functions
+# Roman Urdu detection & translate
 # -----------------------------
 def detect_roman_urdu(text):
     roman_urdu_words = [
-        'tum', 'tu', 'aap', 'wo', 'main', 'hum', 'mera', 'tera', 'hamara', 
+        'tum', 'tu', 'aap', 'wo', 'main', 'hum', 'mera', 'tera', 'hamara',
         'tumhara', 'uska', 'unka', 'kyun', 'kaise', 'kahan', 'kab', 'kitna',
         'nahi', 'nhi', 'haan', 'ji', 'han', 'jee', 'acha', 'accha', 'theek'
     ]
-    
     text_lower = text.lower()
-    words = text_lower.split()
+    words = re.findall(r'\w+', text_lower)
     if len(words) == 0:
         return False
-        
     roman_word_count = sum(1 for word in words if word in roman_urdu_words)
     return (roman_word_count / len(words)) > 0.2
 
@@ -477,464 +257,252 @@ def translate_text(text, target_lang, source_lang='auto'):
     try:
         if source_lang == 'auto' and detect_roman_urdu(text):
             source_lang = 'ur'
-        
         translated = GoogleTranslator(source=source_lang, target=target_lang).translate(text)
         return translated
     except Exception as e:
         raise Exception(f"Translation failed: {str(e)}")
 
 # -----------------------------
-# Session State Management
-# -----------------------------
-if "translation_history" not in st.session_state:
-    st.session_state.translation_history = []
-
-if "input_text" not in st.session_state:
-    st.session_state.input_text = ""
-
-if "source_lang" not in st.session_state:
-    st.session_state.source_lang = "Auto Detect"
-
-if "target_lang" not in st.session_state:
-    st.session_state.target_lang = "Urdu"
-
-if "current_page" not in st.session_state:
-    st.session_state.current_page = "Dashboard"
-
-init_user_data()
-
-# -----------------------------
-# Professional Dashboard Interface
-# -----------------------------
-def show_professional_dashboard():
-    # Header Section
-    st.markdown('<h1 class="main-header">AI Translator</h1>', unsafe_allow_html=True)
-    st.markdown('<p class="sub-header">Multilingual Translation Platform | 1000+ Languages Supported</p>', unsafe_allow_html=True)
-    
-    # Professional Stats Dashboard
-    st.markdown("### 📊 Platform Analytics")
-    col1, col2, col3, col4 = st.columns(4)
-    
-    with col1:
-        st.markdown("""
-        <div class="stats-card">
-            <div class="stat-number">1000+</div>
-            <div class="stat-label">Languages</div>
-            <div style="margin-top: 10px; font-size: 0.8rem; color: #6c757d;">Global Coverage</div>
-        </div>
-        """, unsafe_allow_html=True)
-    
-    with col2:
-        st.markdown("""
-        <div class="stats-card">
-            <div class="stat-number">99.8%</div>
-            <div class="stat-label">Accuracy</div>
-            <div style="margin-top: 10px; font-size: 0.8rem; color: #6c757d;">AI Powered</div>
-        </div>
-        """, unsafe_allow_html=True)
-    
-    with col3:
-        st.markdown("""
-        <div class="stats-card">
-            <div class="stat-number">24/7</div>
-            <div class="stat-label">Available</div>
-            <div style="margin-top: 10px; font-size: 0.8rem; color: #6c757d;">Instant Results</div>
-        </div>
-        """, unsafe_allow_html=True)
-    
-    with col4:
-        translations_count = len(st.session_state.translation_history)
-        st.markdown(f"""
-        <div class="stats-card">
-            <div class="stat-number">{translations_count}</div>
-            <div class="stat-label">Translations</div>
-            <div style="margin-top: 10px; font-size: 0.8rem; color: #6c757d;">This Session</div>
-        </div>
-        """, unsafe_allow_html=True)
-    
-    # Main Translation Interface
-    st.markdown('<div class="section-header">🎯 Translation Center</div>', unsafe_allow_html=True)
-    
-    with st.container():
-        st.markdown('<div class="translation-container">', unsafe_allow_html=True)
-        
-        # Language Selection
-        col1, col2, col3 = st.columns([2, 1, 2])
-        
-        with col1:
-            source_lang = st.selectbox(
-                "**Source Language**",
-                ["Auto Detect"] + list(LANGUAGES.keys()),
-                index=0,
-                key="source_lang"
-            )
-        
-        with col2:
-            st.markdown("<div style='display: flex; justify-content: center; align-items: center; height: 80px;'>", unsafe_allow_html=True)
-            if st.button("🔄", help="Swap Languages", key="swap_btn"):
-                if source_lang != "Auto Detect":
-                    current_target = st.session_state.target_lang
-                    st.session_state.target_lang = source_lang
-                    st.session_state.source_lang = current_target
-                    st.rerun()
-            st.markdown("</div>", unsafe_allow_html=True)
-        
-        with col3:
-            target_lang = st.selectbox(
-                "**Target Language**",
-                list(LANGUAGES.keys()),
-                index=list(LANGUAGES.keys()).index("Urdu"),
-                key="target_lang"
-            )
-        
-        # Text Input Areas
-        col1, col2 = st.columns(2)
-        
-        with col1:
-            st.markdown("**Input Text**")
-            input_text = st.text_area(
-                "",
-                placeholder="Enter text to translate...",
-                height=200,
-                key="input_text",
-                label_visibility="collapsed"
-            )
-            if input_text:
-                st.caption(f"Characters: {len(input_text)}")
-        
-        with col2:
-            st.markdown(f"**Translated Text - {target_lang}**")
-            
-            # Translate Button
-            if st.button("Translate Text", use_container_width=True, type="primary"):
-                if input_text.strip():
-                    with st.spinner("Translating..."):
-                        try:
-                            source_code = 'auto' if source_lang == "Auto Detect" else LANGUAGES[source_lang]
-                            translated_text = translate_text(input_text, LANGUAGES[target_lang], source_code)
-                            
-                            # Save to history
-                            history_entry = {
-                                "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-                                "source": source_lang,
-                                "target": target_lang,
-                                "original": input_text[:500],
-                                "translated": translated_text[:500],
-                                "characters": len(input_text)
-                            }
-                            st.session_state.translation_history.append(history_entry)
-                            
-                            st.session_state.translated_text = translated_text
-                            st.success("Translation completed successfully!")
-                            
-                        except Exception as e:
-                            st.error(f"Translation error: {str(e)}")
-                else:
-                    st.warning("Please enter some text to translate")
-            
-            # Display translated text
-            if 'translated_text' in st.session_state:
-                st.text_area(
-                    "",
-                    value=st.session_state.translated_text,
-                    height=200,
-                    key="translated_output",
-                    label_visibility="collapsed"
-                )
-                if st.session_state.translated_text:
-                    st.caption(f"Characters: {len(st.session_state.translated_text)}")
-                    
-                    # Action Buttons
-                    col1, col2 = st.columns(2)
-                    with col1:
-                        audio_bytes = text_to_speech(st.session_state.translated_text, LANGUAGES[target_lang])
-                        if audio_bytes:
-                            st.audio(audio_bytes, format="audio/mp3")
-                    with col2:
-                        st.download_button(
-                            "Download Text",
-                            data=st.session_state.translated_text,
-                            file_name=f"translation_{target_lang}_{datetime.now().strftime('%H%M%S')}.txt",
-                            use_container_width=True
-                        )
-        
-        st.markdown('</div>', unsafe_allow_html=True)
-    
-    # Document Translation Section
-    st.markdown('<div class="section-header">📁 Document Translation</div>', unsafe_allow_html=True)
-    
-    with st.container():
-        col1, col2 = st.columns([2, 1])
-        
-        with col1:
-            uploaded_file = st.file_uploader(
-                "Upload Document (PDF, TXT, DOCX, DOC)",
-                type=['pdf', 'txt', 'docx', 'doc'],
-                help="Supported formats: PDF, TXT, DOCX, DOC"
-            )
-            
-            if uploaded_file is not None:
-                st.success(f"Document uploaded: {uploaded_file.name}")
-                
-                # Extract text using universal function
-                with st.spinner("Extracting text from document..."):
-                    extracted_text = extract_text_from_file(uploaded_file)
-                
-                if extracted_text.strip():
-                    with st.expander("View Extracted Content"):
-                        st.text_area("Extracted Text", extracted_text, height=150, key="extracted_text")
-                    
-                    if st.button("Translate Document", use_container_width=True):
-                        with st.spinner("Translating document content..."):
-                            try:
-                                source_code = 'auto' if source_lang == "Auto Detect" else LANGUAGES[source_lang]
-                                translated_doc = translate_text(extracted_text, LANGUAGES[target_lang], source_code)
-                                
-                                st.success("Document translation completed!")
-                                
-                                with st.expander("View Translated Document"):
-                                    st.text_area("Translated Document", translated_doc, height=200, key="translated_doc")
-                                
-                                st.download_button(
-                                    "Download Translated Document",
-                                    data=translated_doc,
-                                    file_name=f"translated_{uploaded_file.name.split('.')[0]}_{target_lang}.txt",
-                                    use_container_width=True
-                                )
-                                
-                            except Exception as e:
-                                st.error(f"Document translation failed: {str(e)}")
-                else:
-                    st.error("Could not extract readable text from the document")
-        
-        with col2:
-            st.markdown("""
-            <div class="feature-card">
-                <div class="feature-icon">📊</div>
-                <h4>Document Features</h4>
-                <p>• PDF Support</p>
-                <p>• DOCX Ready</p>
-                <p>• DOC Files</p>
-                <p>• Text Extraction</p>
-                <p>• Fast Processing</p>
-            </div>
-            """, unsafe_allow_html=True)
-    
-    # Professional Features Grid
-    st.markdown('<div class="section-header">✨ Platform Features</div>', unsafe_allow_html=True)
-    
-    col1, col2, col3 = st.columns(3)
-    
-    with col1:
-        st.markdown("""
-        <div class="feature-card">
-            <div class="feature-icon">🌍</div>
-            <h4>1000+ Languages</h4>
-            <p>Comprehensive language support with global coverage including all major and regional languages.</p>
-        </div>
-        """, unsafe_allow_html=True)
-    
-    with col2:
-        st.markdown("""
-        <div class="feature-card">
-            <div class="feature-icon">🤖</div>
-            <h4>AI Technology</h4>
-            <p>Advanced machine learning algorithms for accurate and context-aware translations.</p>
-        </div>
-        """, unsafe_allow_html=True)
-    
-    with col3:
-        st.markdown("""
-        <div class="feature-card">
-            <div class="feature-icon">📁</div>
-            <h4>Document Processing</h4>
-            <p>Multi-format document support with intelligent text extraction and formatting.</p>
-        </div>
-        """, unsafe_allow_html=True)
-
-# -----------------------------
-# Sidebar Navigation
+# UI components
 # -----------------------------
 def show_sidebar():
     with st.sidebar:
-        st.markdown("""
-        <div style='text-align: center; padding: 20px 0; border-bottom: 1px solid #e0e0e0; margin-bottom: 20px;'>
-            <h2 style='color: #2b5876; margin: 0;'>🌐</h2>
-            <h3 style='color: #2b5876; margin: 10px 0;'>AI Translator</h3>
-            <p style='color: #6c757d; margin: 0; font-size: 0.9rem;'>Multilingual Platform</p>
-        </div>
-        """, unsafe_allow_html=True)
-        
-        # Navigation
-        st.markdown('<div class="sidebar-section">', unsafe_allow_html=True)
-        st.markdown("### 🧭 Navigation")
-        
-        if st.button("📊 Dashboard", use_container_width=True, type="primary"):
+        st.markdown("<div class='card'>", unsafe_allow_html=True)
+        st.markdown("<h3 style='margin-bottom:6px;'>🌐 AI Translator</h3>", unsafe_allow_html=True)
+        st.markdown("<div class='helper'>Professional translator • Auto source-detect • Document support</div>", unsafe_allow_html=True)
+        st.markdown("---")
+        st.markdown("### Navigation")
+        if st.button("Dashboard", use_container_width=True):
             st.session_state.current_page = "Dashboard"
-            st.rerun()
-        
-        if st.button("📚 Translation History", use_container_width=True):
+            st.experimental_rerun()
+        if st.button("History", use_container_width=True):
             st.session_state.current_page = "History"
-            st.rerun()
-            
-        if st.button("⚙️ Settings", use_container_width=True):
+            st.experimental_rerun()
+        if st.button("Settings", use_container_width=True):
             st.session_state.current_page = "Settings"
-            st.rerun()
-        st.markdown('</div>', unsafe_allow_html=True)
-        
-        # Quick Actions
-        st.markdown('<div class="sidebar-section">', unsafe_allow_html=True)
-        st.markdown("### ⚡ Quick Actions")
-        
-        if st.button("🔄 Clear All", use_container_width=True):
+            st.experimental_rerun()
+        st.markdown("---")
+        st.markdown(f"**Translations this session:** {len(st.session_state.translation_history)}")
+        if st.button("Clear Session", use_container_width=True):
+            st.session_state.translation_history = []
             st.session_state.input_text = ""
             if 'translated_text' in st.session_state:
                 del st.session_state.translated_text
-            st.rerun()
-            
-        if st.button("📥 Export History", use_container_width=True):
-            if st.session_state.translation_history:
-                history_json = json.dumps(st.session_state.translation_history, indent=2)
-                st.download_button(
-                    "Download History JSON",
-                    data=history_json,
-                    file_name=f"translation_history_{datetime.now().strftime('%Y%m%d')}.json",
-                    use_container_width=True
-                )
-        st.markdown('</div>', unsafe_allow_html=True)
-        
-        # User Info
-        st.markdown('<div class="sidebar-section">', unsafe_allow_html=True)
-        st.markdown("### 👤 User Session")
-        st.info(f"Translations: {len(st.session_state.translation_history)}")
-        
-        if st.button("🚪 Logout", use_container_width=True):
-            st.session_state.current_user = None
-            st.session_state.translation_history = []
-            st.rerun()
-        st.markdown('</div>', unsafe_allow_html=True)
+            st.experimental_rerun()
+        st.markdown("</div>", unsafe_allow_html=True)
 
-# -----------------------------
-# History Page
-# -----------------------------
-def show_history_page():
-    st.markdown('<h1 class="main-header">📚 Translation History</h1>', unsafe_allow_html=True)
-    
+def dashboard_page():
+    st.markdown("<div style='display:flex; justify-content:space-between; align-items:center;'>", unsafe_allow_html=True)
+    st.markdown("<div><h1 class='main-header'>AI Translator</h1><div class='sub-header'>Fast • Accurate • Professional — Source automatically detected</div></div>", unsafe_allow_html=True)
+    st.markdown("<div style='text-align:right;'><small class='helper'>Asking only for target language — source set to Auto-detect</small></div>", unsafe_allow_html=True)
+    st.markdown("</div>", unsafe_allow_html=True)
+
+    # Stats row
+    c1, c2, c3, c4 = st.columns([1,1,1,1], gap="large")
+    with c1:
+        st.markdown("<div class='card stats'><div style='font-size:20px; font-weight:700;'>1000+</div><div class='helper'>Languages</div></div>", unsafe_allow_html=True)
+    with c2:
+        st.markdown("<div class='card stats'><div style='font-size:20px; font-weight:700;'>99.8%</div><div class='helper'>Accuracy (AI)</div></div>", unsafe_allow_html=True)
+    with c3:
+        st.markdown("<div class='card stats'><div style='font-size:20px; font-weight:700;'>24/7</div><div class='helper'>Available</div></div>", unsafe_allow_html=True)
+    with c4:
+        st.markdown(f"<div class='card stats'><div style='font-size:20px; font-weight:700;'>{len(st.session_state.translation_history)}</div><div class='helper'>This Session</div></div>", unsafe_allow_html=True)
+
+    st.markdown("<br/>")
+    # Translation center: left = text, right = document / target selection
+    left, right = st.columns([2,1], gap="large")
+    with left:
+        st.markdown("<div class='card'>", unsafe_allow_html=True)
+        st.markdown("<div class='section-title'>Translate Text</div>", unsafe_allow_html=True)
+        input_text = st.text_area("Enter text to translate (or paste text / right from OCR)", value=st.session_state.input_text, height=260, key="input_text_area")
+        st.markdown(f"<div class='helper'>Characters: {len(input_text or '')}</div>", unsafe_allow_html=True)
+
+        # Inline action buttons
+        btn_col1, btn_col2, btn_col3 = st.columns([1,1,1])
+        with btn_col1:
+            if st.button("Translate Text", use_container_width=True):
+                if (input_text or "").strip():
+                    with st.spinner("Translating text..."):
+                        try:
+                            # source is auto-detect always
+                            translated = translate_text(input_text, LANGUAGES[st.session_state.target_lang], source_lang='auto')
+                            st.session_state.translated_text = translated
+                            # Save history
+                            entry = {
+                                "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+                                "source": "Auto Detect",
+                                "target": st.session_state.target_lang,
+                                "original": input_text[:500],
+                                "translated": translated[:500],
+                                "characters": len(input_text)
+                            }
+                            st.session_state.translation_history.append(entry)
+                            st.success("Translation completed.")
+                        except Exception as e:
+                            st.error(str(e))
+                else:
+                    st.warning("Please enter some text to translate.")
+        with btn_col2:
+            if st.button("Clear Input", use_container_width=True):
+                st.session_state.input_text = ""
+                if 'translated_text' in st.session_state:
+                    del st.session_state.translated_text
+                st.experimental_rerun()
+        with btn_col3:
+            if st.button("Use Extracted Document Text", use_container_width=True):
+                if 'extracted_text' in st.session_state and st.session_state.extracted_text.strip():
+                    st.session_state.input_text = st.session_state.extracted_text
+                    st.experimental_rerun()
+                else:
+                    st.warning("No extracted document text available. Upload and extract a document first.")
+
+        # Show translated text if exists
+        if 'translated_text' in st.session_state:
+            st.markdown("<hr/>", unsafe_allow_html=True)
+            st.markdown("<div class='section-title'>Translated Output</div>", unsafe_allow_html=True)
+            st.text_area("", value=st.session_state.translated_text, height=200, key="translated_out")
+            st.markdown("<div style='display:flex; gap:8px; margin-top:8px;'>", unsafe_allow_html=True)
+            # audio and download
+            try:
+                audio_bytes = text_to_speech(st.session_state.translated_text, LANGUAGES[st.session_state.target_lang])
+            except Exception:
+                audio_bytes = None
+            if audio_bytes:
+                st.audio(audio_bytes, format="audio/mp3")
+            st.download_button("Download Translated Text", data=st.session_state.translated_text, file_name=f"translation_{st.session_state.target_lang}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.txt")
+            st.markdown("</div>", unsafe_allow_html=True)
+
+        st.markdown("</div>", unsafe_allow_html=True)
+
+    with right:
+        st.markdown("<div class='card'>", unsafe_allow_html=True)
+        st.markdown("<div class='section-title'>Target Language & Document</div>", unsafe_allow_html=True)
+
+        # Target language select (single selection only; source auto)
+        target_lang = st.selectbox("Choose Target Language", options=list(LANGUAGES.keys()), index=list(LANGUAGES.keys()).index(st.session_state.target_lang))
+        st.session_state.target_lang = target_lang
+        st.markdown("<div class='helper'>Source language will be detected automatically.</div>", unsafe_allow_html=True)
+        st.markdown("<hr/>", unsafe_allow_html=True)
+
+        # File uploader (PDF, TXT, DOCX, DOC) + Extract & Translate
+        uploaded_file = st.file_uploader("Upload Document (PDF, TXT, DOCX, DOC)", type=['pdf', 'txt', 'docx', 'doc'])
+        if uploaded_file is not None:
+            st.markdown(f"**Uploaded:** {uploaded_file.name}", unsafe_allow_html=True)
+            with st.spinner("Extracting text from document..."):
+                extracted = extract_text_from_file(uploaded_file)
+                st.session_state.extracted_text = extracted
+                if extracted.strip():
+                    st.success("Text extracted from document.")
+                else:
+                    st.error("Could not extract text or document format not supported.")
+            if extracted.strip():
+                with st.expander("Preview extracted text"):
+                    st.text_area("Extracted Text", value=extracted, height=180, key="extracted_preview")
+                if st.button("Translate Document", use_container_width=True):
+                    with st.spinner("Translating document..."):
+                        try:
+                            translated_doc = translate_text(extracted, LANGUAGES[st.session_state.target_lang], source_lang='auto')
+                            st.session_state.translated_doc = translated_doc
+                            # Save history (short)
+                            entry = {
+                                "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+                                "source": "Auto Detect",
+                                "target": st.session_state.target_lang,
+                                "original": extracted[:500],
+                                "translated": translated_doc[:500],
+                                "characters": len(extracted)
+                            }
+                            st.session_state.translation_history.append(entry)
+                            st.success("Document translated.")
+                        except Exception as e:
+                            st.error(str(e))
+
+        # Show translated_doc and download
+        if 'translated_doc' in st.session_state:
+            st.markdown("<hr/>", unsafe_allow_html=True)
+            st.markdown("<div class='section-title'>Translated Document</div>", unsafe_allow_html=True)
+            st.text_area("", value=st.session_state.translated_doc, height=180, key="translated_doc_area")
+            st.download_button("Download Translated Document", data=st.session_state.translated_doc, file_name=f"translated_doc_{st.session_state.target_lang}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.txt", use_container_width=True)
+
+        st.markdown("</div>", unsafe_allow_html=True)
+
+def history_page():
+    st.markdown("<h1 class='main-header'>Translation History</h1>", unsafe_allow_html=True)
     if not st.session_state.translation_history:
-        st.info("No translation history available. Start translating to see your history here.")
+        st.info("No translations yet — translate text or documents to see history.")
         return
-    
-    # History Statistics
-    col1, col2, col3 = st.columns(3)
-    with col1:
-        st.metric("Total Translations", len(st.session_state.translation_history))
-    with col2:
-        total_chars = sum(entry.get('characters', 0) for entry in st.session_state.translation_history)
+
+    # summary
+    total_trans = len(st.session_state.translation_history)
+    total_chars = sum(e.get('characters',0) for e in st.session_state.translation_history)
+    c1, c2, c3 = st.columns([1,1,1])
+    with c1:
+        st.metric("Total Translations", total_trans)
+    with c2:
         st.metric("Total Characters", f"{total_chars:,}")
-    with col3:
-        if st.button("🗑️ Clear History", use_container_width=True):
+    with c3:
+        if st.button("Clear History"):
             st.session_state.translation_history = []
-            st.rerun()
-    
-    # History Items
+            st.experimental_rerun()
+
+    st.markdown("<br/>")
     for i, entry in enumerate(reversed(st.session_state.translation_history)):
-        with st.expander(f"🕒 {entry['timestamp']} | {entry['source']} → {entry['target']} | {entry.get('characters', 0)} chars"):
-            col1, col2 = st.columns(2)
-            with col1:
-                st.markdown("**Original Text:**")
-                st.write(entry['original'])
-            with col2:
-                st.markdown("**Translated Text:**")
-                st.write(entry['translated'])
-            
-            col1, col2, col3 = st.columns(3)
-            with col1:
-                if st.button(f"🔊 Listen", key=f"audio_{i}"):
-                    audio_bytes = text_to_speech(entry['translated'], LANGUAGES[entry['target']])
-                    if audio_bytes:
-                        st.audio(audio_bytes, format="audio/mp3")
-            with col2:
-                if st.button(f"🔄 Reuse", key=f"reuse_{i}"):
-                    st.session_state.input_text = entry['original']
-                    st.session_state.source_lang = entry['source']
-                    st.session_state.target_lang = entry['target']
-                    st.session_state.current_page = "Dashboard"
-                    st.rerun()
-            with col3:
-                if st.button(f"🗑️ Delete", key=f"delete_{i}"):
-                    st.session_state.translation_history.pop(-(i+1))
-                    st.rerun()
+        st.markdown("<div class='history-item'>", unsafe_allow_html=True)
+        st.markdown(f"**{entry['timestamp']}** — {entry['source']} → {entry['target']} — {entry.get('characters',0)} chars")
+        st.markdown(f"**Original:** {entry['original']}")
+        st.markdown(f"**Translated:** {entry['translated']}")
+        col1, col2, col3 = st.columns([1,1,1])
+        with col1:
+            if st.button(f"🔊 Listen {i}", key=f"listen_{i}"):
+                try:
+                    audio = text_to_speech(entry['translated'], LANGUAGES[entry['target']])
+                    if audio:
+                        st.audio(audio, format="audio/mp3")
+                except:
+                    st.error("Audio playback failed.")
+        with col2:
+            if st.button(f"↻ Reuse {i}", key=f"reuse_{i}"):
+                st.session_state.input_text = entry['original']
+                st.session_state.target_lang = entry['target']
+                st.session_state.current_page = "Dashboard"
+                st.experimental_rerun()
+        with col3:
+            if st.button(f"🗑 Delete {i}", key=f"del_{i}"):
+                # delete specific entry (index from end)
+                st.session_state.translation_history.pop(len(st.session_state.translation_history)-1 - i)
+                st.experimental_rerun()
+        st.markdown("</div>", unsafe_allow_html=True)
+
+def settings_page():
+    st.markdown("<h1 class='main-header'>Settings</h1>", unsafe_allow_html=True)
+    st.markdown("<div class='card'>", unsafe_allow_html=True)
+    st.markdown("### Preferences", unsafe_allow_html=True)
+    default_target = st.selectbox("Default target language (for new sessions)", options=list(LANGUAGES.keys()), index=list(LANGUAGES.keys()).index(st.session_state.target_lang))
+    st.session_state.target_lang = default_target
+    st.checkbox("Enable Text-to-Speech", value=True, key="enable_tts")
+    st.markdown("<hr/>", unsafe_allow_html=True)
+    if st.button("Reset Session Data"):
+        st.session_state.translation_history = []
+        st.session_state.input_text = ""
+        if 'translated_text' in st.session_state:
+            del st.session_state.translated_text
+        st.success("Session data reset.")
+    st.markdown("</div>", unsafe_allow_html=True)
 
 # -----------------------------
-# Settings Page
-# -----------------------------
-def show_settings_page():
-    st.markdown('<h1 class="main-header">⚙️ Settings</h1>', unsafe_allow_html=True)
-    
-    col1, col2 = st.columns(2)
-    
-    with col1:
-        st.markdown("### 🎯 Translation Settings")
-        st.selectbox("Default Source Language", ["Auto Detect"] + list(LANGUAGES.keys()), key="default_source")
-        st.selectbox("Default Target Language", list(LANGUAGES.keys()), 
-                    index=list(LANGUAGES.keys()).index("Urdu"), key="default_target")
-        st.slider("Translation Speed", 1, 3, 2, key="translation_speed")
-        
-    with col2:
-        st.markdown("### 🔊 Audio Settings")
-        st.checkbox("Enable Text-to-Speech", value=True, key="enable_tts")
-        st.slider("Speech Speed", 0.5, 2.0, 1.0, key="speech_speed")
-        st.selectbox("Voice Gender", ["Female", "Male"], key="voice_gender")
-    
-    st.markdown("### 💾 Data Management")
-    col1, col2 = st.columns(2)
-    with col1:
-        if st.button("Export All Data", use_container_width=True):
-            if st.session_state.translation_history:
-                history_json = json.dumps(st.session_state.translation_history, indent=2)
-                st.download_button(
-                    "Download Data",
-                    data=history_json,
-                    file_name=f"translator_data_{datetime.now().strftime('%Y%m%d_%H%M%S')}.json",
-                    use_container_width=True
-                )
-    with col2:
-        if st.button("Reset All Settings", use_container_width=True):
-            st.session_state.translation_history = []
-            st.session_state.input_text = ""
-            if 'translated_text' in st.session_state:
-                del st.session_state.translated_text
-            st.success("All settings and data have been reset!")
-
-# -----------------------------
-# Main App Controller
+# Page controller
 # -----------------------------
 def main():
-    # Show Sidebar Navigation
     show_sidebar()
-    
-    # Show Current Page
     if st.session_state.current_page == "Dashboard":
-        show_professional_dashboard()
+        dashboard_page()
     elif st.session_state.current_page == "History":
-        show_history_page()
+        history_page()
     elif st.session_state.current_page == "Settings":
-        show_settings_page()
-    
-    # Professional Footer
-    st.markdown("---")
-    st.markdown("""
-    <div style='text-align: center; padding: 30px 0; color: #6c757d;'>
-        <h4 style='color: #2b5876; margin-bottom: 10px;'>AI Translator</h4>
-        <p style='margin-bottom: 15px;'>Multilingual Translation Platform | 1000+ Languages Supported</p>
-        <div style='font-size: 0.8rem;'>
-            <span>© 2024 AI Translator. All rights reserved.</span>
-        </div>
-    </div>
-    """, unsafe_allow_html=True)
+        settings_page()
 
-# -----------------------------
-# Run App
-# -----------------------------
+    st.markdown("<hr/>", unsafe_allow_html=True)
+    st.markdown("<div style='text-align:center; color:#6b7280;'>© 2024 AI Translator — Professional UI</div>", unsafe_allow_html=True)
+
 if __name__ == "__main__":
     main()

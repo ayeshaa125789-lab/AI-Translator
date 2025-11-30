@@ -1,4 +1,3 @@
-
 import streamlit as st
 from deep_translator import GoogleTranslator
 from gtts import gTTS
@@ -13,12 +12,13 @@ import pdfplumber
 from docx import Document
 import tempfile
 import hashlib
+import docx2txt
 
 # -----------------------------
 # App Configuration
 # -----------------------------
 st.set_page_config(
-    page_title="AI Translator Pro - Enterprise Translation Platform",
+    page_title="AI Translator - Multilingual Translation Platform",
     page_icon="🌐",
     layout="wide",
     initial_sidebar_state="expanded"
@@ -373,7 +373,7 @@ LANGUAGES = {
 }
 
 # -----------------------------
-# File Processing Functions
+# File Processing Functions (Enhanced with DOC support)
 # -----------------------------
 def extract_text_from_pdf(uploaded_file):
     try:
@@ -408,6 +408,38 @@ def extract_text_from_docx(uploaded_file):
                 text += paragraph.text + "\n"
         return text.strip() if text.strip() else ""
     except Exception as e:
+        return ""
+
+def extract_text_from_doc(uploaded_file):
+    try:
+        # Create a temporary file to save the uploaded .doc file
+        with tempfile.NamedTemporaryFile(delete=False, suffix='.doc') as temp_file:
+            temp_file.write(uploaded_file.read())
+            temp_file_path = temp_file.name
+        
+        # Use docx2txt to extract text from .doc file
+        text = docx2txt.process(temp_file_path)
+        
+        # Clean up temporary file
+        os.unlink(temp_file_path)
+        
+        return text.strip() if text.strip() else ""
+    except Exception as e:
+        return ""
+
+def extract_text_from_file(uploaded_file):
+    """Universal file text extraction function"""
+    file_ext = uploaded_file.name.split('.')[-1].lower()
+    
+    if file_ext == 'pdf':
+        return extract_text_from_pdf(uploaded_file)
+    elif file_ext == 'txt':
+        return extract_text_from_txt(uploaded_file)
+    elif file_ext == 'docx':
+        return extract_text_from_docx(uploaded_file)
+    elif file_ext == 'doc':
+        return extract_text_from_doc(uploaded_file)
+    else:
         return ""
 
 # -----------------------------
@@ -476,8 +508,8 @@ init_user_data()
 # -----------------------------
 def show_professional_dashboard():
     # Header Section
-    st.markdown('<h1 class="main-header">🌐 AI Translator Pro</h1>', unsafe_allow_html=True)
-    st.markdown('<p class="sub-header">Enterprise Translation Platform | 1000+ Languages Supported</p>', unsafe_allow_html=True)
+    st.markdown('<h1 class="main-header">AI Translator</h1>', unsafe_allow_html=True)
+    st.markdown('<p class="sub-header">Multilingual Translation Platform | 1000+ Languages Supported</p>', unsafe_allow_html=True)
     
     # Professional Stats Dashboard
     st.markdown("### 📊 Platform Analytics")
@@ -636,25 +668,17 @@ def show_professional_dashboard():
         
         with col1:
             uploaded_file = st.file_uploader(
-                "Upload Document (PDF, TXT, DOCX)",
-                type=['pdf', 'txt', 'docx'],
-                help="Supported formats: PDF, TXT, DOCX"
+                "Upload Document (PDF, TXT, DOCX, DOC)",
+                type=['pdf', 'txt', 'docx', 'doc'],
+                help="Supported formats: PDF, TXT, DOCX, DOC"
             )
             
             if uploaded_file is not None:
                 st.success(f"Document uploaded: {uploaded_file.name}")
                 
-                # Extract text
-                file_ext = uploaded_file.name.split('.')[-1].lower()
-                extracted_text = ""
-                
+                # Extract text using universal function
                 with st.spinner("Extracting text from document..."):
-                    if file_ext == 'pdf':
-                        extracted_text = extract_text_from_pdf(uploaded_file)
-                    elif file_ext == 'txt':
-                        extracted_text = extract_text_from_txt(uploaded_file)
-                    elif file_ext == 'docx':
-                        extracted_text = extract_text_from_docx(uploaded_file)
+                    extracted_text = extract_text_from_file(uploaded_file)
                 
                 if extracted_text.strip():
                     with st.expander("View Extracted Content"):
@@ -690,6 +714,7 @@ def show_professional_dashboard():
                 <h4>Document Features</h4>
                 <p>• PDF Support</p>
                 <p>• DOCX Ready</p>
+                <p>• DOC Files</p>
                 <p>• Text Extraction</p>
                 <p>• Fast Processing</p>
             </div>
@@ -735,8 +760,8 @@ def show_sidebar():
         st.markdown("""
         <div style='text-align: center; padding: 20px 0; border-bottom: 1px solid #e0e0e0; margin-bottom: 20px;'>
             <h2 style='color: #2b5876; margin: 0;'>🌐</h2>
-            <h3 style='color: #2b5876; margin: 10px 0;'>AI Translator Pro</h3>
-            <p style='color: #6c757d; margin: 0; font-size: 0.9rem;'>Enterprise Platform</p>
+            <h3 style='color: #2b5876; margin: 10px 0;'>AI Translator</h3>
+            <p style='color: #6c757d; margin: 0; font-size: 0.9rem;'>Multilingual Platform</p>
         </div>
         """, unsafe_allow_html=True)
         
@@ -900,10 +925,10 @@ def main():
     st.markdown("---")
     st.markdown("""
     <div style='text-align: center; padding: 30px 0; color: #6c757d;'>
-        <h4 style='color: #2b5876; margin-bottom: 10px;'>🌐 AI Translator Pro</h4>
-        <p style='margin-bottom: 15px;'>Enterprise Translation Platform | 1000+ Languages Supported</p>
+        <h4 style='color: #2b5876; margin-bottom: 10px;'>AI Translator</h4>
+        <p style='margin-bottom: 15px;'>Multilingual Translation Platform | 1000+ Languages Supported</p>
         <div style='font-size: 0.8rem;'>
-            <span>© 2024 AI Translator Pro. All rights reserved.</span>
+            <span>© 2024 AI Translator. All rights reserved.</span>
         </div>
     </div>
     """, unsafe_allow_html=True)

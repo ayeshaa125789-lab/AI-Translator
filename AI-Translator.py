@@ -84,6 +84,11 @@ st.markdown("""
     
     /* Hide Streamlit footer */
     .css-1lsmgbg { display: none; }
+    
+    /* Custom button styles */
+    .stButton button {
+        width: 100%;
+    }
 </style>
 """, unsafe_allow_html=True)
 
@@ -573,28 +578,52 @@ def show_sidebar():
 # History Page
 # -----------------------------
 def show_history_page():
-    st.markdown("### Translation History")
+    st.markdown('<h1 class="main-header">Translation History</h1>', unsafe_allow_html=True)
     
     if not st.session_state.translation_history:
         st.info("No translation history available")
         return
     
+    # History Statistics
+    col1, col2, col3 = st.columns(3)
+    with col1:
+        st.metric("Total Translations", len(st.session_state.translation_history))
+    with col2:
+        total_chars = sum(entry.get('characters', 0) for entry in st.session_state.translation_history)
+        st.metric("Total Characters", f"{total_chars:,}")
+    with col3:
+        if st.button("🗑️ Clear History", use_container_width=True):
+            st.session_state.translation_history = []
+            st.rerun()
+    
+    # History Items
     for i, entry in enumerate(reversed(st.session_state.translation_history)):
-        with st.expander(f"{entry['timestamp']} | {entry['source']} → {entry['target']}"):
+        with st.expander(f"🕒 {entry['timestamp']} | {entry['source']} → {entry['target']} | {entry.get('characters', 0)} chars"):
             col1, col2 = st.columns(2)
             with col1:
-                st.write("**Original:**")
+                st.markdown("**Original Text:**")
                 st.write(entry['original'])
             with col2:
-                st.write("**Translated:**")
+                st.markdown("**Translated Text:**")
                 st.write(entry['translated'])
             
-            if st.button(f"Reuse", key=f"reuse_{i}"):
-                st.session_state.input_text = entry['original']
-                st.session_state.source_lang = entry['source']
-                st.session_state.target_lang = entry['target']
-                st.session_state.current_page = "Translator"
-                st.rerun()
+            col1, col2, col3 = st.columns(3)
+            with col1:
+                if st.button(f"🔊 Listen", key=f"audio_{i}"):
+                    audio_bytes = text_to_speech(entry['translated'], LANGUAGES[entry['target']])
+                    if audio_bytes:
+                        st.audio(audio_bytes, format="audio/mp3")
+            with col2:
+                if st.button(f"🔄 Reuse", key=f"reuse_{i}"):
+                    st.session_state.input_text = entry['original']
+                    st.session_state.source_lang = entry['source']
+                    st.session_state.target_lang = entry['target']
+                    st.session_state.current_page = "Translator"
+                    st.rerun()
+            with col3:
+                if st.button(f"🗑️ Delete", key=f"delete_{i}"):
+                    st.session_state.translation_history.pop(-(i+1))
+                    st.rerun()
 
 # -----------------------------
 # Main App

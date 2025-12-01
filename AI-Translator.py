@@ -350,7 +350,13 @@ def text_to_speech(text, lang_code):
 # -----------------------------
 def translate_text(text, target_lang, source_lang='auto'):
     try:
-        translated = GoogleTranslator(source=source_lang, target=target_lang).translate(text)
+        # Fix for deep_translator new version
+        if source_lang == 'auto':
+            translator = GoogleTranslator(target=target_lang)
+        else:
+            translator = GoogleTranslator(source=source_lang, target=target_lang)
+        
+        translated = translator.translate(text)
         return translated
     except Exception as e:
         raise Exception(f"Translation failed: {str(e)}")

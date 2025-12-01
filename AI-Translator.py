@@ -377,46 +377,9 @@ def show_translator():
     # Clean Header - Just name
     st.markdown('<h1 class="main-header">🌐 AI Translator</h1>', unsafe_allow_html=True)
     
-    # Language Selection and Stats in same row
-    col1, col2, col3, col4 = st.columns(4)
-    
-    with col1:
-        st.markdown("""
-        <div class="stats-card">
-            <div class="stat-number">1000+</div>
-            <div class="stat-label">Languages</div>
-        </div>
-        """, unsafe_allow_html=True)
-    
-    with col2:
-        st.markdown("""
-        <div class="stats-card">
-            <div class="stat-number">99.8%</div>
-            <div class="stat-label">Accuracy</div>
-        </div>
-        """, unsafe_allow_html=True)
-    
-    with col3:
-        st.markdown("""
-        <div class="stats-card">
-            <div class="stat-number">24/7</div>
-            <div class="stat-label">Available</div>
-        </div>
-        """, unsafe_allow_html=True)
-    
-    with col4:
-        translations_count = len(st.session_state.translation_history)
-        st.markdown(f"""
-        <div class="stats-card">
-            <div class="stat-number">{translations_count}</div>
-            <div class="stat-label">Translations</div>
-        </div>
-        """, unsafe_allow_html=True)
-    
-    # Main Translation Interface
+    # Language Selection FIRST - Translation interface starts here
     st.markdown('<div class="translation-box">', unsafe_allow_html=True)
     
-    # Language Selection Section
     col1, col2 = st.columns([3, 2])
     with col1:
         st.markdown('<div class="section-title">🎯 Select Language to Translate To</div>', unsafe_allow_html=True)
@@ -434,8 +397,8 @@ def show_translator():
     
     st.markdown('</div>', unsafe_allow_html=True)
     
-    # Main Translation Tabs - BELOW language selection
-    st.markdown('<div style="margin-top: 20px;"></div>', unsafe_allow_html=True)
+    # Main Translation Tabs - IMMEDIATELY BELOW language selection
+    st.markdown('<div style="margin-top: 10px;"></div>', unsafe_allow_html=True)
     
     # Tabs for Text and Document Translation
     tab1, tab2 = st.tabs(["📝 **Text Translation**", "📁 **Document Translation**"])
@@ -629,6 +592,45 @@ def show_translator():
                 <p>• 📊 Translation History</p>
             </div>
             """, unsafe_allow_html=True)
+    
+    # Stats cards moved to the VERY END - After translation interface
+    st.markdown('<div style="margin-top: 40px;"></div>', unsafe_allow_html=True)
+    st.markdown('<div class="section-title" style="text-align: center;">📊 Platform Statistics</div>', unsafe_allow_html=True)
+    
+    col1, col2, col3, col4 = st.columns(4)
+    
+    with col1:
+        st.markdown("""
+        <div class="stats-card" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
+            <div class="stat-number">1000+</div>
+            <div class="stat-label">Languages</div>
+        </div>
+        """, unsafe_allow_html=True)
+    
+    with col2:
+        st.markdown("""
+        <div class="stats-card" style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);">
+            <div class="stat-number">99.8%</div>
+            <div class="stat-label">Accuracy</div>
+        </div>
+        """, unsafe_allow_html=True)
+    
+    with col3:
+        st.markdown("""
+        <div class="stats-card" style="background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);">
+            <div class="stat-number">24/7</div>
+            <div class="stat-label">Available</div>
+        </div>
+        """, unsafe_allow_html=True)
+    
+    with col4:
+        translations_count = len(st.session_state.translation_history)
+        st.markdown(f"""
+        <div class="stats-card" style="background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);">
+            <div class="stat-number">{translations_count}</div>
+            <div class="stat-label">Translations</div>
+        </div>
+        """, unsafe_allow_html=True)
 
 # -----------------------------
 # Sidebar

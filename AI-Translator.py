@@ -28,74 +28,108 @@ st.markdown("""
         font-size: 2.5rem;
         font-weight: 700;
         text-align: center;
-        margin-bottom: 0.5rem;
+        margin-bottom: 1rem;
         color: #1f2937;
+        padding-bottom: 10px;
+        border-bottom: 2px solid #e5e7eb;
+    }
+    
+    .sub-header {
+        font-size: 1.2rem;
+        color: #6b7280;
+        text-align: center;
+        margin-bottom: 2rem;
+        font-weight: 400;
     }
     
     .stats-card {
-        background: white;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
         padding: 20px;
-        border-radius: 10px;
+        border-radius: 12px;
         text-align: center;
         margin: 8px 0;
-        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-        border: 1px solid #e5e7eb;
+        box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+        border: none;
+        transition: transform 0.3s ease;
     }
     
-    .feature-card {
-        background: white;
-        padding: 20px;
-        border-radius: 10px;
-        margin: 8px 0;
-        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-        border-left: 4px solid #3b82f6;
+    .stats-card:hover {
+        transform: translateY(-5px);
     }
     
-    .translation-container {
+    .translation-box {
         background: white;
-        border-radius: 10px;
         padding: 25px;
+        border-radius: 15px;
         margin: 15px 0;
-        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        box-shadow: 0 4px 20px rgba(0,0,0,0.08);
         border: 1px solid #e5e7eb;
+    }
+    
+    .input-section {
+        background: #f8fafc;
+        padding: 25px;
+        border-radius: 12px;
+        border: 2px solid #e2e8f0;
+        margin: 15px 0;
+    }
+    
+    .output-section {
+        background: #f0f9ff;
+        padding: 25px;
+        border-radius: 12px;
+        border: 2px solid #bae6fd;
+        margin: 15px 0;
     }
     
     .sidebar-section {
         background: white;
         padding: 15px;
-        border-radius: 8px;
+        border-radius: 10px;
         margin: 10px 0;
-        box-shadow: 0 1px 4px rgba(0,0,0,0.05);
+        box-shadow: 0 2px 8px rgba(0,0,0,0.05);
         border: 1px solid #e5e7eb;
     }
     
     .stat-number {
-        font-size: 2rem;
-        font-weight: 700;
-        margin-bottom: 5px;
-        color: #1f2937;
+        font-size: 2.2rem;
+        font-weight: 800;
+        margin-bottom: 8px;
+        color: white;
     }
     
     .stat-label {
-        font-size: 0.8rem;
+        font-size: 0.9rem;
         font-weight: 600;
-        color: #6b7280;
+        color: rgba(255,255,255,0.9);
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+    
+    .section-title {
+        font-size: 1.3rem;
+        font-weight: 700;
+        color: #1f2937;
+        margin-bottom: 15px;
+        padding-bottom: 8px;
+        border-bottom: 2px solid #3b82f6;
     }
     
     /* Hide Streamlit footer */
     .css-1lsmgbg { display: none; }
     
-    /* Custom button styles */
-    .stButton button {
-        width: 100%;
+    .stTabs [data-baseweb="tab-list"] {
+        gap: 8px;
+        background-color: #f8fafc;
+        padding: 8px;
+        border-radius: 10px;
     }
     
-    .audio-section {
-        background: #f8f9fa;
-        padding: 15px;
-        border-radius: 10px;
-        border: 1px solid #e5e7eb;
-        margin: 10px 0;
+    .stTabs [data-baseweb="tab"] {
+        border-radius: 8px;
+        padding: 10px 20px;
+        font-weight: 600;
     }
 </style>
 """, unsafe_allow_html=True)
@@ -348,31 +382,53 @@ if "current_page" not in st.session_state:
 # Main Translator Interface
 # -----------------------------
 def show_translator():
-    # Header - Only name at top
-    st.markdown('<h1 class="main-header">AI Translator</h1>', unsafe_allow_html=True)
+    # Clean Header - Just name
+    st.markdown('<h1 class="main-header">🌐 AI Translator</h1>', unsafe_allow_html=True)
     
-    # Stats cards moved below the header
+    # Language Selection FIRST - Before stats
+    st.markdown('<div class="translation-box">', unsafe_allow_html=True)
+    
+    col1, col2 = st.columns([3, 2])
+    with col1:
+        st.markdown('<div class="section-title">🎯 Select Translation Language</div>', unsafe_allow_html=True)
+        target_lang = st.selectbox(
+            "Choose the language you want to translate to:",
+            list(LANGUAGES.keys()),
+            index=list(LANGUAGES.keys()).index("Urdu"),
+            key="target_lang"
+        )
+    
+    with col2:
+        st.markdown('<div style="margin-top: 35px;">', unsafe_allow_html=True)
+        st.success("✅ **Auto Language Detection** - We'll automatically detect the source language from your text")
+        st.markdown('</div>', unsafe_allow_html=True)
+    
+    st.markdown('</div>', unsafe_allow_html=True)
+    
+    # Stats cards BELOW language selection
+    st.markdown('<div class="section-title" style="text-align: center; margin-top: 20px;">📊 Translation Platform</div>', unsafe_allow_html=True)
+    
     col1, col2, col3, col4 = st.columns(4)
     
     with col1:
         st.markdown("""
-        <div class="stats-card">
+        <div class="stats-card" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
             <div class="stat-number">1000+</div>
-            <div class="stat-label">Languages</div>
+            <div class="stat-label">Languages Supported</div>
         </div>
         """, unsafe_allow_html=True)
     
     with col2:
         st.markdown("""
-        <div class="stats-card">
+        <div class="stats-card" style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);">
             <div class="stat-number">99.8%</div>
-            <div class="stat-label">Accuracy</div>
+            <div class="stat-label">Translation Accuracy</div>
         </div>
         """, unsafe_allow_html=True)
     
     with col3:
         st.markdown("""
-        <div class="stats-card">
+        <div class="stats-card" style="background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);">
             <div class="stat-number">24/7</div>
             <div class="stat-label">Available</div>
         </div>
@@ -381,185 +437,208 @@ def show_translator():
     with col4:
         translations_count = len(st.session_state.translation_history)
         st.markdown(f"""
-        <div class="stats-card">
+        <div class="stats-card" style="background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);">
             <div class="stat-number">{translations_count}</div>
-            <div class="stat-label">Translations</div>
+            <div class="stat-label">Your Translations</div>
         </div>
         """, unsafe_allow_html=True)
     
-    # Main Translation Interface - Everything in one container
-    with st.container():
-        st.markdown('<div class="translation-container">', unsafe_allow_html=True)
+    # Main Translation Interface
+    st.markdown('<div style="margin-top: 30px;"></div>', unsafe_allow_html=True)
+    
+    # Tabs for Text and Document Translation
+    tab1, tab2 = st.tabs(["📝 **Text Translation**", "📁 **Document Translation**"])
+    
+    with tab1:
+        # Text Input and Output in same tab
+        col1, col2 = st.columns(2)
         
-        # Only Target Language Selection - Simple and clean
-        st.markdown("### Select Translation Language")
-        target_lang = st.selectbox(
-            "Choose language to translate to:",
-            list(LANGUAGES.keys()),
-            index=list(LANGUAGES.keys()).index("Urdu"),
-            key="target_lang"
-        )
-        
-        # Info message about auto detection
-        st.info("🌍 Source language will be automatically detected from your input")
-        
-        # Tabs for Text and Document Translation
-        tab1, tab2 = st.tabs(["📝 Text Translation", "📁 Document Translation"])
-        
-        with tab1:
-            # Text Input and Output in same tab
-            col1, col2 = st.columns(2)
+        with col1:
+            st.markdown('<div class="input-section">', unsafe_allow_html=True)
+            st.markdown('<div class="section-title">📥 Input Text</div>', unsafe_allow_html=True)
+            input_text = st.text_area(
+                "Type or paste your text here...",
+                placeholder="Enter text in any language (English, Urdu, Arabic, Spanish, etc.)...",
+                height=280,
+                key="input_text",
+                label_visibility="collapsed"
+            )
             
-            with col1:
-                st.markdown("#### Input Text")
-                input_text = st.text_area(
-                    "Enter your text here...",
-                    placeholder="Type or paste text in any language...",
-                    height=250,
-                    key="input_text",
-                    label_visibility="collapsed"
-                )
-                
-                # Translate button below input text
-                if st.button("🚀 Translate Text", use_container_width=True, type="primary"):
-                    if input_text.strip():
-                        with st.spinner("🔄 Translating..."):
-                            try:
-                                # Always use auto detect for source language
-                                translated_text = translate_text(input_text, LANGUAGES[target_lang], 'auto')
-                                
-                                history_entry = {
-                                    "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-                                    "source": "Auto Detected",
-                                    "target": target_lang,
-                                    "original": input_text[:500],
-                                    "translated": translated_text[:500],
-                                    "characters": len(input_text)
-                                }
-                                st.session_state.translation_history.append(history_entry)
-                                
-                                st.session_state.translated_text = translated_text
-                                st.success("✅ Translation completed!")
-                                st.rerun()
-                                
-                            except Exception as e:
-                                st.error(f"❌ Translation error: {str(e)}")
-                    else:
-                        st.warning("⚠️ Please enter some text to translate")
+            # Character count
+            if input_text:
+                st.caption(f"📊 **Characters:** {len(input_text)}")
             
-            with col2:
-                st.markdown(f"#### Translated Text - {target_lang}")
-                if 'translated_text' in st.session_state:
+            # Translate button
+            if st.button("🚀 **Translate Now**", use_container_width=True, type="primary"):
+                if input_text.strip():
+                    with st.spinner("🔍 Detecting language and translating..."):
+                        try:
+                            # Always use auto detect for source language
+                            translated_text = translate_text(input_text, LANGUAGES[target_lang], 'auto')
+                            
+                            history_entry = {
+                                "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+                                "source": "Auto Detected",
+                                "target": target_lang,
+                                "original": input_text[:500],
+                                "translated": translated_text[:500],
+                                "characters": len(input_text)
+                            }
+                            st.session_state.translation_history.append(history_entry)
+                            
+                            st.session_state.translated_text = translated_text
+                            st.session_state.translated_lang = target_lang
+                            st.success("✅ Translation completed successfully!")
+                            st.rerun()
+                            
+                        except Exception as e:
+                            st.error(f"❌ Translation error: {str(e)}")
+                else:
+                    st.warning("⚠️ Please enter some text to translate")
+            
+            st.markdown('</div>', unsafe_allow_html=True)
+        
+        with col2:
+            st.markdown('<div class="output-section">', unsafe_allow_html=True)
+            st.markdown(f'<div class="section-title">📤 Translated Text - {target_lang}</div>', unsafe_allow_html=True)
+            
+            if 'translated_text' in st.session_state and 'translated_lang' in st.session_state:
+                if st.session_state.translated_lang == target_lang:
                     st.text_area(
-                        "Translated text will appear here...",
+                        "Translated text appears here...",
                         value=st.session_state.translated_text,
-                        height=250,
+                        height=280,
                         key="translated_output",
                         label_visibility="collapsed"
                     )
                     
-                    # Text-to-Speech Section - Now properly visible
-                    st.markdown("---")
-                    st.markdown("#### 🔊 Text-to-Speech")
+                    # Character count for translation
+                    st.caption(f"📊 **Characters:** {len(st.session_state.translated_text)}")
                     
-                    # Audio player
+                    # Text-to-Speech Section
+                    st.markdown("---")
+                    st.markdown('<div class="section-title">🔊 Listen to Translation</div>', unsafe_allow_html=True)
+                    
                     audio_bytes = text_to_speech(st.session_state.translated_text, LANGUAGES[target_lang])
                     if audio_bytes:
-                        st.audio(audio_bytes, format="audio/mp3")
-                        
-                        # Download audio button
-                        st.download_button(
-                            "📥 Download Audio",
-                            data=audio_bytes,
-                            file_name=f"audio_{target_lang}.mp3",
-                            use_container_width=True
-                        )
+                        col1, col2 = st.columns([2, 1])
+                        with col1:
+                            st.audio(audio_bytes, format="audio/mp3")
+                        with col2:
+                            st.download_button(
+                                "📥 Download Audio",
+                                data=audio_bytes,
+                                file_name=f"audio_{target_lang}.mp3",
+                                mime="audio/mp3",
+                                use_container_width=True
+                            )
                     else:
                         st.warning("Audio generation not available for this language")
                     
                     # Download text button
                     st.download_button(
-                        "📥 Download Text",
+                        "📥 Download Translated Text",
                         data=st.session_state.translated_text,
                         file_name=f"translation_{target_lang}.txt",
+                        mime="text/plain",
                         use_container_width=True
                     )
                 else:
-                    st.info("🔤 Translation will appear here after you click the translate button")
-        
-        with tab2:
-            # Document Translation in second tab
-            col1, col2 = st.columns([2, 1])
+                    st.info("🔄 Please translate again for the selected language")
+            else:
+                st.info("✨ **Your translation will appear here**\n\n1. Enter text in the left box\n2. Click 'Translate Now' button\n3. View your translation here")
             
-            with col1:
-                st.markdown("#### Upload Document")
-                uploaded_file = st.file_uploader(
-                    "Choose a file...",
-                    type=['pdf', 'txt', 'docx'],
-                    label_visibility="collapsed"
-                )
+            st.markdown('</div>', unsafe_allow_html=True)
+    
+    with tab2:
+        # Document Translation in second tab
+        col1, col2 = st.columns([2, 1])
+        
+        with col1:
+            st.markdown('<div class="input-section">', unsafe_allow_html=True)
+            st.markdown('<div class="section-title">📁 Upload Document</div>', unsafe_allow_html=True)
+            
+            uploaded_file = st.file_uploader(
+                "Choose a file to translate",
+                type=['pdf', 'txt', 'docx'],
+                label_visibility="collapsed"
+            )
+            
+            if uploaded_file is not None:
+                st.success(f"✅ **File Uploaded:** {uploaded_file.name}")
                 
-                if uploaded_file is not None:
-                    st.success(f"✅ Uploaded: {uploaded_file.name}")
+                with st.spinner("📖 Extracting text from document..."):
+                    extracted_text = extract_text_from_file(uploaded_file)
+                
+                if extracted_text.strip():
+                    with st.expander("📋 **View Extracted Content**", expanded=False):
+                        st.text_area("Extracted Text", extracted_text, height=150, label_visibility="collapsed")
                     
-                    with st.spinner("📖 Extracting text..."):
-                        extracted_text = extract_text_from_file(uploaded_file)
-                    
-                    if extracted_text.strip():
-                        with st.expander("📋 View Extracted Content"):
-                            st.text_area("Extracted Text", extracted_text, height=150, label_visibility="collapsed")
-                        
-                        if st.button("🚀 Translate Document", use_container_width=True):
-                            with st.spinner("🔄 Translating document..."):
-                                try:
-                                    # Always use auto detect for source language
-                                    translated_doc = translate_text(extracted_text, LANGUAGES[target_lang], 'auto')
-                                    
-                                    st.success("✅ Document translation completed!")
-                                    
-                                    with st.expander("📄 View Translated Document"):
-                                        st.text_area("Translated Document", translated_doc, height=200, label_visibility="collapsed")
-                                    
-                                    # Text-to-Speech for document translation
-                                    st.markdown("#### 🔊 Text-to-Speech")
-                                    doc_audio_bytes = text_to_speech(translated_doc, LANGUAGES[target_lang])
-                                    if doc_audio_bytes:
+                    if st.button("🚀 **Translate Document**", use_container_width=True, type="primary"):
+                        with st.spinner("🔄 Translating document content..."):
+                            try:
+                                translated_doc = translate_text(extracted_text, LANGUAGES[target_lang], 'auto')
+                                
+                                st.success("✅ Document translation completed!")
+                                
+                                with st.expander("📄 **View Translated Document**", expanded=True):
+                                    st.text_area("Translated Document", translated_doc, height=200, label_visibility="collapsed")
+                                
+                                # Text-to-Speech for document
+                                st.markdown("---")
+                                st.markdown('<div class="section-title">🔊 Listen to Document Translation</div>', unsafe_allow_html=True)
+                                
+                                doc_audio_bytes = text_to_speech(translated_doc, LANGUAGES[target_lang])
+                                if doc_audio_bytes:
+                                    col1, col2 = st.columns([2, 1])
+                                    with col1:
                                         st.audio(doc_audio_bytes, format="audio/mp3")
-                                        
-                                        # Download audio for document
+                                    with col2:
                                         st.download_button(
                                             "📥 Download Audio",
                                             data=doc_audio_bytes,
                                             file_name=f"audio_document_{target_lang}.mp3",
+                                            mime="audio/mp3",
                                             use_container_width=True
                                         )
-                                    
-                                    # Download translated document
-                                    st.download_button(
-                                        "📥 Download Translated Document",
-                                        data=translated_doc,
-                                        file_name=f"translated_{uploaded_file.name.split('.')[0]}.txt",
-                                        use_container_width=True
-                                    )
-                                    
-                                except Exception as e:
-                                    st.error(f"❌ Document translation failed: {str(e)}")
-                    else:
-                        st.error("❌ Could not extract text from the document")
+                                
+                                # Download translated document
+                                st.download_button(
+                                    "📥 Download Translated Document",
+                                    data=translated_doc,
+                                    file_name=f"translated_{uploaded_file.name.split('.')[0]}.txt",
+                                    mime="text/plain",
+                                    use_container_width=True
+                                )
+                                
+                            except Exception as e:
+                                st.error(f"❌ Document translation failed: {str(e)}")
                 else:
-                    st.info("📁 Upload a PDF, TXT, or DOCX file to translate")
+                    st.error("❌ Could not extract text from the document")
+            else:
+                st.info("📁 **Upload a document to translate**\n\nSupported formats:\n• PDF Documents (.pdf)\n• Text Files (.txt)\n• Word Documents (.docx)")
             
-            with col2:
-                st.markdown("""
-                <div class="feature-card">
-                    <h4>📁 Supported Formats</h4>
-                    <p>• PDF Documents</p>
-                    <p>• Text Files (TXT)</p>
-                    <p>• Word Documents (DOCX)</p>
-                </div>
-                """, unsafe_allow_html=True)
+            st.markdown('</div>', unsafe_allow_html=True)
         
-        st.markdown('</div>', unsafe_allow_html=True)
+        with col2:
+            st.markdown("""
+            <div class="sidebar-section">
+                <div class="section-title">📋 Quick Guide</div>
+                <p><strong>1. Select Language</strong><br>Choose target language above</p>
+                <p><strong>2. Enter Text/Upload File</strong><br>Type text or upload document</p>
+                <p><strong>3. Click Translate</strong><br>Get instant translation</p>
+                <p><strong>4. Listen & Download</strong><br>Hear audio and save results</p>
+            </div>
+            
+            <div class="sidebar-section">
+                <div class="section-title">✅ Features</div>
+                <p>• 🌍 Auto Language Detection</p>
+                <p>• 🔊 Text-to-Speech</p>
+                <p>• 📥 Download Options</p>
+                <p>• 📊 Translation History</p>
+                <p>• 🔄 Real-time Translation</p>
+            </div>
+            """, unsafe_allow_html=True)
 
 # -----------------------------
 # Sidebar
@@ -569,42 +648,53 @@ def show_sidebar():
         st.markdown("""
         <div style='text-align: center; padding: 15px 0; margin-bottom: 15px;'>
             <h3 style='color: #1f2937; margin: 0;'>🌐 AI Translator</h3>
+            <p style='color: #6b7280; margin: 5px 0 0 0; font-size: 0.9rem;'>Professional Translation Platform</p>
         </div>
         """, unsafe_allow_html=True)
         
         # Navigation
         st.markdown('<div class="sidebar-section">', unsafe_allow_html=True)
-        if st.button("🔍 Translator", use_container_width=True, type="primary"):
+        st.markdown("**🧭 Navigation**")
+        if st.button("🔍 **Translator**", use_container_width=True, type="primary"):
             st.session_state.current_page = "Translator"
             st.rerun()
         
-        if st.button("📚 History", use_container_width=True):
+        if st.button("📚 **Translation History**", use_container_width=True):
             st.session_state.current_page = "History"
             st.rerun()
         st.markdown('</div>', unsafe_allow_html=True)
         
         # Quick Actions
         st.markdown('<div class="sidebar-section">', unsafe_allow_html=True)
-        if st.button("🔄 Clear All", use_container_width=True):
+        st.markdown("**⚡ Quick Actions**")
+        if st.button("🔄 **Clear Current**", use_container_width=True):
             st.session_state.input_text = ""
             if 'translated_text' in st.session_state:
                 del st.session_state.translated_text
+            if 'translated_lang' in st.session_state:
+                del st.session_state.translated_lang
             st.rerun()
         st.markdown('</div>', unsafe_allow_html=True)
         
         # Session Info
         st.markdown('<div class="sidebar-section">', unsafe_allow_html=True)
-        st.info(f"Translations: {len(st.session_state.translation_history)}")
+        st.markdown("**📊 Session Stats**")
+        translations_count = len(st.session_state.translation_history)
+        st.metric("Total Translations", translations_count)
+        
+        if translations_count > 0:
+            total_chars = sum(entry.get('characters', 0) for entry in st.session_state.translation_history)
+            st.metric("Total Characters", f"{total_chars:,}")
         st.markdown('</div>', unsafe_allow_html=True)
 
 # -----------------------------
 # History Page
 # -----------------------------
 def show_history_page():
-    st.markdown('<h1 class="main-header">Translation History</h1>', unsafe_allow_html=True)
+    st.markdown('<h1 class="main-header">📚 Translation History</h1>', unsafe_allow_html=True)
     
     if not st.session_state.translation_history:
-        st.info("No translation history available")
+        st.info("No translation history available. Start translating to see your history here.")
         return
     
     # History Statistics
@@ -615,13 +705,13 @@ def show_history_page():
         total_chars = sum(entry.get('characters', 0) for entry in st.session_state.translation_history)
         st.metric("Total Characters", f"{total_chars:,}")
     with col3:
-        if st.button("🗑️ Clear History", use_container_width=True):
+        if st.button("🗑️ Clear All History", use_container_width=True):
             st.session_state.translation_history = []
             st.rerun()
     
     # History Items
     for i, entry in enumerate(reversed(st.session_state.translation_history)):
-        with st.expander(f"🕒 {entry['timestamp']} | {entry['source']} → {entry['target']} | {entry.get('characters', 0)} chars"):
+        with st.expander(f"📅 {entry['timestamp']} | {entry['source']} → {entry['target']} | {entry.get('characters', 0)} chars"):
             col1, col2 = st.columns(2)
             with col1:
                 st.markdown("**Original Text:**")

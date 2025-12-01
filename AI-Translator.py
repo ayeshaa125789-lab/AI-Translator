@@ -89,6 +89,14 @@ st.markdown("""
     .stButton button {
         width: 100%;
     }
+    
+    .audio-section {
+        background: #f8f9fa;
+        padding: 15px;
+        border-radius: 10px;
+        border: 1px solid #e5e7eb;
+        margin: 10px 0;
+    }
 </style>
 """, unsafe_allow_html=True)
 
@@ -450,19 +458,32 @@ def show_translator():
                         label_visibility="collapsed"
                     )
                     
-                    # Action buttons below translated text
-                    col1, col2 = st.columns(2)
-                    with col1:
-                        audio_bytes = text_to_speech(st.session_state.translated_text, LANGUAGES[target_lang])
-                        if audio_bytes:
-                            st.audio(audio_bytes, format="audio/mp3")
-                    with col2:
+                    # Text-to-Speech Section - Now properly visible
+                    st.markdown("---")
+                    st.markdown("#### 🔊 Text-to-Speech")
+                    
+                    # Audio player
+                    audio_bytes = text_to_speech(st.session_state.translated_text, LANGUAGES[target_lang])
+                    if audio_bytes:
+                        st.audio(audio_bytes, format="audio/mp3")
+                        
+                        # Download audio button
                         st.download_button(
-                            "📥 Download Text",
-                            data=st.session_state.translated_text,
-                            file_name=f"translation_{target_lang}.txt",
+                            "📥 Download Audio",
+                            data=audio_bytes,
+                            file_name=f"audio_{target_lang}.mp3",
                             use_container_width=True
                         )
+                    else:
+                        st.warning("Audio generation not available for this language")
+                    
+                    # Download text button
+                    st.download_button(
+                        "📥 Download Text",
+                        data=st.session_state.translated_text,
+                        file_name=f"translation_{target_lang}.txt",
+                        use_container_width=True
+                    )
                 else:
                     st.info("🔤 Translation will appear here after you click the translate button")
         
@@ -499,6 +520,21 @@ def show_translator():
                                     with st.expander("📄 View Translated Document"):
                                         st.text_area("Translated Document", translated_doc, height=200, label_visibility="collapsed")
                                     
+                                    # Text-to-Speech for document translation
+                                    st.markdown("#### 🔊 Text-to-Speech")
+                                    doc_audio_bytes = text_to_speech(translated_doc, LANGUAGES[target_lang])
+                                    if doc_audio_bytes:
+                                        st.audio(doc_audio_bytes, format="audio/mp3")
+                                        
+                                        # Download audio for document
+                                        st.download_button(
+                                            "📥 Download Audio",
+                                            data=doc_audio_bytes,
+                                            file_name=f"audio_document_{target_lang}.mp3",
+                                            use_container_width=True
+                                        )
+                                    
+                                    # Download translated document
                                     st.download_button(
                                         "📥 Download Translated Document",
                                         data=translated_doc,

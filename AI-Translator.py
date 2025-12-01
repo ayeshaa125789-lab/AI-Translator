@@ -34,14 +34,6 @@ st.markdown("""
         border-bottom: 2px solid #e5e7eb;
     }
     
-    .sub-header {
-        font-size: 1.2rem;
-        color: #6b7280;
-        text-align: center;
-        margin-bottom: 2rem;
-        font-weight: 400;
-    }
-    
     .stats-card {
         background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
         color: white;
@@ -385,50 +377,28 @@ def show_translator():
     # Clean Header - Just name
     st.markdown('<h1 class="main-header">🌐 AI Translator</h1>', unsafe_allow_html=True)
     
-    # Language Selection FIRST - Before stats
-    st.markdown('<div class="translation-box">', unsafe_allow_html=True)
-    
-    col1, col2 = st.columns([3, 2])
-    with col1:
-        st.markdown('<div class="section-title">🎯 Select Translation Language</div>', unsafe_allow_html=True)
-        target_lang = st.selectbox(
-            "Choose the language you want to translate to:",
-            list(LANGUAGES.keys()),
-            index=list(LANGUAGES.keys()).index("Urdu"),
-            key="target_lang"
-        )
-    
-    with col2:
-        st.markdown('<div style="margin-top: 35px;">', unsafe_allow_html=True)
-        st.success("✅ **Auto Language Detection** - We'll automatically detect the source language from your text")
-        st.markdown('</div>', unsafe_allow_html=True)
-    
-    st.markdown('</div>', unsafe_allow_html=True)
-    
-    # Stats cards BELOW language selection
-    st.markdown('<div class="section-title" style="text-align: center; margin-top: 20px;">📊 Translation Platform</div>', unsafe_allow_html=True)
-    
+    # Language Selection and Stats in same row
     col1, col2, col3, col4 = st.columns(4)
     
     with col1:
         st.markdown("""
-        <div class="stats-card" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
+        <div class="stats-card">
             <div class="stat-number">1000+</div>
-            <div class="stat-label">Languages Supported</div>
+            <div class="stat-label">Languages</div>
         </div>
         """, unsafe_allow_html=True)
     
     with col2:
         st.markdown("""
-        <div class="stats-card" style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);">
+        <div class="stats-card">
             <div class="stat-number">99.8%</div>
-            <div class="stat-label">Translation Accuracy</div>
+            <div class="stat-label">Accuracy</div>
         </div>
         """, unsafe_allow_html=True)
     
     with col3:
         st.markdown("""
-        <div class="stats-card" style="background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);">
+        <div class="stats-card">
             <div class="stat-number">24/7</div>
             <div class="stat-label">Available</div>
         </div>
@@ -437,14 +407,35 @@ def show_translator():
     with col4:
         translations_count = len(st.session_state.translation_history)
         st.markdown(f"""
-        <div class="stats-card" style="background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);">
+        <div class="stats-card">
             <div class="stat-number">{translations_count}</div>
-            <div class="stat-label">Your Translations</div>
+            <div class="stat-label">Translations</div>
         </div>
         """, unsafe_allow_html=True)
     
     # Main Translation Interface
-    st.markdown('<div style="margin-top: 30px;"></div>', unsafe_allow_html=True)
+    st.markdown('<div class="translation-box">', unsafe_allow_html=True)
+    
+    # Language Selection Section
+    col1, col2 = st.columns([3, 2])
+    with col1:
+        st.markdown('<div class="section-title">🎯 Select Language to Translate To</div>', unsafe_allow_html=True)
+        target_lang = st.selectbox(
+            "Choose target language:",
+            list(LANGUAGES.keys()),
+            index=list(LANGUAGES.keys()).index("Urdu"),
+            key="target_lang"
+        )
+    
+    with col2:
+        st.markdown('<div style="margin-top: 35px;">', unsafe_allow_html=True)
+        st.info("🌍 **Auto Language Detection** - Source language will be automatically detected")
+        st.markdown('</div>', unsafe_allow_html=True)
+    
+    st.markdown('</div>', unsafe_allow_html=True)
+    
+    # Main Translation Tabs - BELOW language selection
+    st.markdown('<div style="margin-top: 20px;"></div>', unsafe_allow_html=True)
     
     # Tabs for Text and Document Translation
     tab1, tab2 = st.tabs(["📝 **Text Translation**", "📁 **Document Translation**"])
@@ -455,10 +446,10 @@ def show_translator():
         
         with col1:
             st.markdown('<div class="input-section">', unsafe_allow_html=True)
-            st.markdown('<div class="section-title">📥 Input Text</div>', unsafe_allow_html=True)
+            st.markdown('<div class="section-title">📥 Enter Text to Translate</div>', unsafe_allow_html=True)
             input_text = st.text_area(
                 "Type or paste your text here...",
-                placeholder="Enter text in any language (English, Urdu, Arabic, Spanish, etc.)...",
+                placeholder="Enter text in any language...",
                 height=280,
                 key="input_text",
                 label_visibility="collapsed"
@@ -546,7 +537,7 @@ def show_translator():
                 else:
                     st.info("🔄 Please translate again for the selected language")
             else:
-                st.info("✨ **Your translation will appear here**\n\n1. Enter text in the left box\n2. Click 'Translate Now' button\n3. View your translation here")
+                st.info("✨ **Your translation will appear here**\n\n1. Enter text in the left box\n2. Click 'Translate Now' button")
             
             st.markdown('</div>', unsafe_allow_html=True)
     
@@ -616,7 +607,7 @@ def show_translator():
                 else:
                     st.error("❌ Could not extract text from the document")
             else:
-                st.info("📁 **Upload a document to translate**\n\nSupported formats:\n• PDF Documents (.pdf)\n• Text Files (.txt)\n• Word Documents (.docx)")
+                st.info("📁 **Upload a document to translate**\n\nSupported formats: PDF, TXT, DOCX")
             
             st.markdown('</div>', unsafe_allow_html=True)
         
@@ -636,7 +627,6 @@ def show_translator():
                 <p>• 🔊 Text-to-Speech</p>
                 <p>• 📥 Download Options</p>
                 <p>• 📊 Translation History</p>
-                <p>• 🔄 Real-time Translation</p>
             </div>
             """, unsafe_allow_html=True)
 

@@ -15,113 +15,233 @@ import hashlib
 # App Configuration
 # -----------------------------
 st.set_page_config(
-    page_title="AI Translator",
-    page_icon="🌐",
+    page_title="AI Translator Pro",
+    page_icon="🚀",
     layout="wide",
     initial_sidebar_state="expanded"
 )
 
-# Clean Professional CSS
+# Modern Professional CSS
 st.markdown("""
 <style>
-    .main-header {
-        font-size: 2.5rem;
-        font-weight: 700;
+    /* Modern Gradient Header */
+    .gradient-header {
+        font-size: 3rem;
+        font-weight: 800;
         text-align: center;
         margin-bottom: 1rem;
-        color: #1f2937;
-        padding-bottom: 10px;
-        border-bottom: 2px solid #e5e7eb;
+        background: linear-gradient(45deg, #FF6B6B, #4ECDC4, #45B7D1, #96CEB4, #FECA57, #FF9FF3, #54A0FF);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+        background-size: 300% 300%;
+        animation: gradient 5s ease infinite;
     }
     
-    .stats-card {
+    @keyframes gradient {
+        0% { background-position: 0% 50%; }
+        50% { background-position: 100% 50%; }
+        100% { background-position: 0% 50%; }
+    }
+    
+    /* Modern Cards with Glass Effect */
+    .glass-card {
+        background: rgba(255, 255, 255, 0.85);
+        backdrop-filter: blur(10px);
+        border-radius: 20px;
+        border: 1px solid rgba(255, 255, 255, 0.3);
+        padding: 25px;
+        margin: 15px 0;
+        box-shadow: 0 8px 32px rgba(31, 38, 135, 0.15);
+        transition: all 0.3s ease;
+    }
+    
+    .glass-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 15px 40px rgba(31, 38, 135, 0.25);
+    }
+    
+    /* Gradient Stats Cards */
+    .gradient-card-1 {
         background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
         color: white;
-        padding: 20px;
-        border-radius: 12px;
+        padding: 25px;
+        border-radius: 20px;
         text-align: center;
-        margin: 8px 0;
-        box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
-        border: none;
-        transition: transform 0.3s ease;
-    }
-    
-    .stats-card:hover {
-        transform: translateY(-5px);
-    }
-    
-    .translation-box {
-        background: white;
-        padding: 25px;
-        border-radius: 15px;
-        margin: 15px 0;
-        box-shadow: 0 4px 20px rgba(0,0,0,0.08);
-        border: 1px solid #e5e7eb;
-    }
-    
-    .input-section {
-        background: #f8fafc;
-        padding: 25px;
-        border-radius: 12px;
-        border: 2px solid #e2e8f0;
-        margin: 15px 0;
-    }
-    
-    .output-section {
-        background: #f0f9ff;
-        padding: 25px;
-        border-radius: 12px;
-        border: 2px solid #bae6fd;
-        margin: 15px 0;
-    }
-    
-    .sidebar-section {
-        background: white;
-        padding: 15px;
-        border-radius: 10px;
         margin: 10px 0;
-        box-shadow: 0 2px 8px rgba(0,0,0,0.05);
-        border: 1px solid #e5e7eb;
+        box-shadow: 0 10px 30px rgba(102, 126, 234, 0.4);
+        border: none;
+        transition: all 0.3s ease;
     }
     
-    .stat-number {
-        font-size: 2.2rem;
-        font-weight: 800;
-        margin-bottom: 8px;
+    .gradient-card-2 {
+        background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
         color: white;
+        padding: 25px;
+        border-radius: 20px;
+        text-align: center;
+        margin: 10px 0;
+        box-shadow: 0 10px 30px rgba(245, 87, 108, 0.4);
+        border: none;
+        transition: all 0.3s ease;
     }
     
-    .stat-label {
-        font-size: 0.9rem;
-        font-weight: 600;
-        color: rgba(255,255,255,0.9);
-        text-transform: uppercase;
-        letter-spacing: 0.5px;
+    .gradient-card-3 {
+        background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+        color: white;
+        padding: 25px;
+        border-radius: 20px;
+        text-align: center;
+        margin: 10px 0;
+        box-shadow: 0 10px 30px rgba(79, 172, 254, 0.4);
+        border: none;
+        transition: all 0.3s ease;
     }
     
-    .section-title {
-        font-size: 1.3rem;
+    .gradient-card-4 {
+        background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);
+        color: white;
+        padding: 25px;
+        border-radius: 20px;
+        text-align: center;
+        margin: 10px 0;
+        box-shadow: 0 10px 30px rgba(67, 233, 123, 0.4);
+        border: none;
+        transition: all 0.3s ease;
+    }
+    
+    .gradient-card-1:hover, .gradient-card-2:hover, 
+    .gradient-card-3:hover, .gradient-card-4:hover {
+        transform: translateY(-8px) scale(1.02);
+    }
+    
+    /* Modern Input/Output Sections */
+    .modern-input {
+        background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+        padding: 30px;
+        border-radius: 20px;
+        border: 2px solid #cbd5e1;
+        margin: 20px 0;
+        box-shadow: 0 5px 20px rgba(203, 213, 225, 0.3);
+        transition: all 0.3s ease;
+    }
+    
+    .modern-input:hover {
+        border-color: #667eea;
+        box-shadow: 0 8px 25px rgba(102, 126, 234, 0.2);
+    }
+    
+    .modern-output {
+        background: linear-gradient(135deg, #f0f9ff 0%, #bae6fd 100%);
+        padding: 30px;
+        border-radius: 20px;
+        border: 2px solid #7dd3fc;
+        margin: 20px 0;
+        box-shadow: 0 5px 20px rgba(186, 230, 253, 0.3);
+        transition: all 0.3s ease;
+    }
+    
+    .modern-output:hover {
+        border-color: #4facfe;
+        box-shadow: 0 8px 25px rgba(79, 172, 254, 0.2);
+    }
+    
+    /* Animated Section Titles */
+    .animated-title {
+        font-size: 1.8rem;
         font-weight: 700;
         color: #1f2937;
-        margin-bottom: 15px;
-        padding-bottom: 8px;
-        border-bottom: 2px solid #3b82f6;
+        margin-bottom: 20px;
+        padding-bottom: 10px;
+        border-bottom: 3px solid;
+        border-image: linear-gradient(45deg, #FF6B6B, #4ECDC4) 1;
+        display: inline-block;
+        background: linear-gradient(45deg, #FF6B6B, #4ECDC4, #45B7D1);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+    }
+    
+    /* Modern Sidebar */
+    .sidebar-glass {
+        background: rgba(255, 255, 255, 0.9);
+        backdrop-filter: blur(10px);
+        border-right: 1px solid rgba(255, 255, 255, 0.3);
+    }
+    
+    /* Stats Numbers */
+    .glow-number {
+        font-size: 3rem;
+        font-weight: 900;
+        margin-bottom: 10px;
+        color: white;
+        text-shadow: 0 0 20px rgba(255, 255, 255, 0.5);
+    }
+    
+    .glow-label {
+        font-size: 1rem;
+        font-weight: 600;
+        color: rgba(255, 255, 255, 0.9);
+        text-transform: uppercase;
+        letter-spacing: 1px;
+    }
+    
+    /* Modern Tabs */
+    .stTabs [data-baseweb="tab-list"] {
+        gap: 2px;
+        background-color: transparent;
+        padding: 10px;
+        border-radius: 15px;
+        background: rgba(255, 255, 255, 0.1);
+        backdrop-filter: blur(10px);
+    }
+    
+    .stTabs [data-baseweb="tab"] {
+        background: rgba(255, 255, 255, 0.2);
+        border-radius: 12px;
+        padding: 12px 24px;
+        font-weight: 700;
+        color: #1f2937;
+        transition: all 0.3s ease;
+    }
+    
+    .stTabs [aria-selected="true"] {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white !important;
+        box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
     }
     
     /* Hide Streamlit footer */
     .css-1lsmgbg { display: none; }
     
-    .stTabs [data-baseweb="tab-list"] {
-        gap: 8px;
-        background-color: #f8fafc;
-        padding: 8px;
+    /* Custom Scrollbar */
+    ::-webkit-scrollbar {
+        width: 8px;
+    }
+    
+    ::-webkit-scrollbar-track {
+        background: #f1f1f1;
         border-radius: 10px;
     }
     
-    .stTabs [data-baseweb="tab"] {
-        border-radius: 8px;
-        padding: 10px 20px;
-        font-weight: 600;
+    ::-webkit-scrollbar-thumb {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        border-radius: 10px;
+    }
+    
+    ::-webkit-scrollbar-thumb:hover {
+        background: linear-gradient(135deg, #764ba2 0%, #667eea 100%);
+    }
+    
+    /* Floating Animation */
+    @keyframes float {
+        0% { transform: translateY(0px); }
+        50% { transform: translateY(-10px); }
+        100% { transform: translateY(0px); }
+    }
+    
+    .floating {
+        animation: float 3s ease-in-out infinite;
     }
 </style>
 """, unsafe_allow_html=True)
@@ -350,7 +470,6 @@ def text_to_speech(text, lang_code):
 # -----------------------------
 def translate_text(text, target_lang, source_lang='auto'):
     try:
-        # Fix for deep_translator new version
         if source_lang == 'auto':
             translator = GoogleTranslator(target=target_lang)
         else:
@@ -380,17 +499,18 @@ if "current_page" not in st.session_state:
 # Main Translator Interface
 # -----------------------------
 def show_translator():
-    # Clean Header - Just name
-    st.markdown('<h1 class="main-header">🌐 AI Translator</h1>', unsafe_allow_html=True)
+    # Modern Animated Header
+    st.markdown('<h1 class="gradient-header">🚀 AI Translator Pro</h1>', unsafe_allow_html=True)
+    st.markdown('<p style="text-align: center; color: #6b7280; font-size: 1.2rem; margin-bottom: 30px;">Professional Translation Platform | AI-Powered Language Solutions</p>', unsafe_allow_html=True)
     
-    # Language Selection - Translation interface starts IMMEDIATELY
-    st.markdown('<div class="translation-box">', unsafe_allow_html=True)
+    # Language Selection - Modern Glass Card
+    st.markdown('<div class="glass-card">', unsafe_allow_html=True)
     
     col1, col2 = st.columns([3, 2])
     with col1:
-        st.markdown('<div class="section-title">🎯 Select Language to Translate To</div>', unsafe_allow_html=True)
+        st.markdown('<div class="animated-title">🎯 Select Target Language</div>', unsafe_allow_html=True)
         target_lang = st.selectbox(
-            "Choose target language:",
+            "Choose the language you want to translate to:",
             list(LANGUAGES.keys()),
             index=list(LANGUAGES.keys()).index("Urdu"),
             key="target_lang"
@@ -398,42 +518,47 @@ def show_translator():
     
     with col2:
         st.markdown('<div style="margin-top: 35px;">', unsafe_allow_html=True)
-        st.info("🌍 **Auto Language Detection** - Source language will be automatically detected")
+        st.info("""
+        **🌍 Smart Features:**
+        - Auto Language Detection
+        - 1000+ Languages Support
+        - Real-time Translation
+        - Context-Aware Results
+        """)
         st.markdown('</div>', unsafe_allow_html=True)
     
     st.markdown('</div>', unsafe_allow_html=True)
     
-    # Main Translation Tabs - IMMEDIATELY BELOW language selection
-    st.markdown('<div style="margin-top: 10px;"></div>', unsafe_allow_html=True)
+    # Main Translation Tabs with Modern Design
+    st.markdown('<div style="margin-top: 20px;"></div>', unsafe_allow_html=True)
     
-    # Tabs for Text and Document Translation
+    # Create tabs with icons
     tab1, tab2 = st.tabs(["📝 **Text Translation**", "📁 **Document Translation**"])
     
     with tab1:
-        # Text Input and Output in same tab
+        # Text Input and Output in same tab with modern design
         col1, col2 = st.columns(2)
         
         with col1:
-            st.markdown('<div class="input-section">', unsafe_allow_html=True)
-            st.markdown('<div class="section-title">📥 Enter Text to Translate</div>', unsafe_allow_html=True)
+            st.markdown('<div class="modern-input">', unsafe_allow_html=True)
+            st.markdown('<div class="animated-title">📥 Input Text</div>', unsafe_allow_html=True)
             input_text = st.text_area(
-                "Type or paste your text here...",
-                placeholder="Enter text in any language...",
-                height=280,
+                "",
+                placeholder="✨ Type or paste your text here in any language...\n\nExample: Hello, how are you? नमस्ते, आप कैसे हैं? مرحبا، كيف حالك؟",
+                height=300,
                 key="input_text",
                 label_visibility="collapsed"
             )
             
-            # Character count
+            # Character count with style
             if input_text:
-                st.caption(f"📊 **Characters:** {len(input_text)}")
+                st.markdown(f'<div style="background: linear-gradient(135deg, #667eea, #764ba2); color: white; padding: 10px; border-radius: 10px; text-align: center; margin-top: 10px;">📊 Characters: {len(input_text)}</div>', unsafe_allow_html=True)
             
-            # Translate button
+            # Modern Translate button
             if st.button("🚀 **Translate Now**", use_container_width=True, type="primary"):
                 if input_text.strip():
-                    with st.spinner("🔍 Detecting language and translating..."):
+                    with st.spinner("🔄 **AI is processing your translation...**"):
                         try:
-                            # Always use auto detect for source language
                             translated_text = translate_text(input_text, LANGUAGES[target_lang], 'auto')
                             
                             history_entry = {
@@ -448,36 +573,36 @@ def show_translator():
                             
                             st.session_state.translated_text = translated_text
                             st.session_state.translated_lang = target_lang
-                            st.success("✅ Translation completed successfully!")
+                            st.success("✅ **Translation completed successfully!**")
                             st.rerun()
                             
                         except Exception as e:
-                            st.error(f"❌ Translation error: {str(e)}")
+                            st.error(f"❌ **Translation error:** {str(e)}")
                 else:
-                    st.warning("⚠️ Please enter some text to translate")
+                    st.warning("⚠️ **Please enter some text to translate**")
             
             st.markdown('</div>', unsafe_allow_html=True)
         
         with col2:
-            st.markdown('<div class="output-section">', unsafe_allow_html=True)
-            st.markdown(f'<div class="section-title">📤 Translated Text - {target_lang}</div>', unsafe_allow_html=True)
+            st.markdown('<div class="modern-output">', unsafe_allow_html=True)
+            st.markdown(f'<div class="animated-title">📤 Translation - {target_lang}</div>', unsafe_allow_html=True)
             
             if 'translated_text' in st.session_state and 'translated_lang' in st.session_state:
                 if st.session_state.translated_lang == target_lang:
                     st.text_area(
-                        "Translated text appears here...",
+                        "",
                         value=st.session_state.translated_text,
-                        height=280,
+                        height=300,
                         key="translated_output",
                         label_visibility="collapsed"
                     )
                     
                     # Character count for translation
-                    st.caption(f"📊 **Characters:** {len(st.session_state.translated_text)}")
+                    st.markdown(f'<div style="background: linear-gradient(135deg, #4facfe, #00f2fe); color: white; padding: 10px; border-radius: 10px; text-align: center; margin-top: 10px;">📊 Characters: {len(st.session_state.translated_text)}</div>', unsafe_allow_html=True)
                     
-                    # Text-to-Speech Section
+                    # Text-to-Speech Section with modern design
                     st.markdown("---")
-                    st.markdown('<div class="section-title">🔊 Listen to Translation</div>', unsafe_allow_html=True)
+                    st.markdown('<div class="animated-title" style="font-size: 1.4rem;">🔊 Audio Output</div>', unsafe_allow_html=True)
                     
                     audio_bytes = text_to_speech(st.session_state.translated_text, LANGUAGES[target_lang])
                     if audio_bytes:
@@ -486,27 +611,33 @@ def show_translator():
                             st.audio(audio_bytes, format="audio/mp3")
                         with col2:
                             st.download_button(
-                                "📥 Download Audio",
+                                "🎵 Download Audio",
                                 data=audio_bytes,
-                                file_name=f"audio_{target_lang}.mp3",
+                                file_name=f"translation_audio_{target_lang}.mp3",
                                 mime="audio/mp3",
                                 use_container_width=True
                             )
                     else:
-                        st.warning("Audio generation not available for this language")
+                        st.warning("🔇 **Audio generation not available for this language**")
                     
-                    # Download text button
+                    # Modern download button
                     st.download_button(
-                        "📥 Download Translated Text",
+                        "💾 Download Text",
                         data=st.session_state.translated_text,
                         file_name=f"translation_{target_lang}.txt",
                         mime="text/plain",
                         use_container_width=True
                     )
                 else:
-                    st.info("🔄 Please translate again for the selected language")
+                    st.info("🔄 **Please translate again for the selected language**")
             else:
-                st.info("✨ **Your translation will appear here**\n\n1. Enter text in the left box\n2. Click 'Translate Now' button")
+                st.markdown("""
+                <div style="text-align: center; padding: 40px; background: linear-gradient(135deg, rgba(255,255,255,0.1), rgba(255,255,255,0.2)); border-radius: 15px; margin: 20px 0;">
+                    <div style="font-size: 4rem; margin-bottom: 20px;">✨</div>
+                    <h3 style="color: #1f2937;">Your Translation Awaits</h3>
+                    <p style="color: #6b7280;">Enter text in the left box and click "Translate Now"</p>
+                </div>
+                """, unsafe_allow_html=True)
             
             st.markdown('</div>', unsafe_allow_html=True)
     
@@ -515,39 +646,36 @@ def show_translator():
         col1, col2 = st.columns([2, 1])
         
         with col1:
-            st.markdown('<div class="input-section">', unsafe_allow_html=True)
-            st.markdown('<div class="section-title">📁 Upload Document</div>', unsafe_allow_html=True)
+            st.markdown('<div class="modern-input">', unsafe_allow_html=True)
+            st.markdown('<div class="animated-title">📁 Document Upload</div>', unsafe_allow_html=True)
             
             uploaded_file = st.file_uploader(
-                "Choose a file to translate",
+                "📤 **Drag & drop or click to upload**",
                 type=['pdf', 'txt', 'docx'],
                 label_visibility="collapsed"
             )
             
             if uploaded_file is not None:
-                st.success(f"✅ **File Uploaded:** {uploaded_file.name}")
+                st.success(f"✅ **File Uploaded Successfully:** {uploaded_file.name}")
                 
-                with st.spinner("📖 Extracting text from document..."):
+                with st.spinner("📖 **Extracting text from document...**"):
                     extracted_text = extract_text_from_file(uploaded_file)
                 
                 if extracted_text.strip():
                     with st.expander("📋 **View Extracted Content**", expanded=False):
-                        st.text_area("Extracted Text", extracted_text, height=150, label_visibility="collapsed")
+                        st.text_area("", extracted_text, height=150, label_visibility="collapsed")
                     
                     if st.button("🚀 **Translate Document**", use_container_width=True, type="primary"):
-                        with st.spinner("🔄 Translating document content..."):
+                        with st.spinner("🔄 **Translating document content...**"):
                             try:
                                 translated_doc = translate_text(extracted_text, LANGUAGES[target_lang], 'auto')
                                 
-                                st.success("✅ Document translation completed!")
+                                st.success("✅ **Document translation completed!**")
                                 
                                 with st.expander("📄 **View Translated Document**", expanded=True):
-                                    st.text_area("Translated Document", translated_doc, height=200, label_visibility="collapsed")
+                                    st.text_area("", translated_doc, height=200, label_visibility="collapsed")
                                 
-                                # Text-to-Speech for document
-                                st.markdown("---")
-                                st.markdown('<div class="section-title">🔊 Listen to Document Translation</div>', unsafe_allow_html=True)
-                                
+                                # Audio for document
                                 doc_audio_bytes = text_to_speech(translated_doc, LANGUAGES[target_lang])
                                 if doc_audio_bytes:
                                     col1, col2 = st.columns([2, 1])
@@ -555,16 +683,16 @@ def show_translator():
                                         st.audio(doc_audio_bytes, format="audio/mp3")
                                     with col2:
                                         st.download_button(
-                                            "📥 Download Audio",
+                                            "🎵 Download Audio",
                                             data=doc_audio_bytes,
-                                            file_name=f"audio_document_{target_lang}.mp3",
+                                            file_name=f"document_audio_{target_lang}.mp3",
                                             mime="audio/mp3",
                                             use_container_width=True
                                         )
                                 
-                                # Download translated document
+                                # Download document
                                 st.download_button(
-                                    "📥 Download Translated Document",
+                                    "💾 Download Document",
                                     data=translated_doc,
                                     file_name=f"translated_{uploaded_file.name.split('.')[0]}.txt",
                                     mime="text/plain",
@@ -572,74 +700,100 @@ def show_translator():
                                 )
                                 
                             except Exception as e:
-                                st.error(f"❌ Document translation failed: {str(e)}")
+                                st.error(f"❌ **Document translation failed:** {str(e)}")
                 else:
-                    st.error("❌ Could not extract text from the document")
+                    st.error("❌ **Could not extract text from the document**")
             else:
-                st.info("📁 **Upload a document to translate**\n\nSupported formats: PDF, TXT, DOCX")
+                st.markdown("""
+                <div style="text-align: center; padding: 40px; background: linear-gradient(135deg, rgba(255,255,255,0.1), rgba(255,255,255,0.2)); border-radius: 15px; margin: 20px 0; border: 2px dashed #cbd5e1;">
+                    <div style="font-size: 4rem; margin-bottom: 20px;">📁</div>
+                    <h3 style="color: #1f2937;">Upload Your Document</h3>
+                    <p style="color: #6b7280;">Supported formats: PDF, TXT, DOCX</p>
+                    <p style="color: #6b7280; font-size: 0.9rem;">Maximum file size: 200MB</p>
+                </div>
+                """, unsafe_allow_html=True)
             
             st.markdown('</div>', unsafe_allow_html=True)
         
         with col2:
             st.markdown("""
-            <div class="sidebar-section">
-                <div class="section-title">📋 Quick Guide</div>
-                <p><strong>1. Select Language</strong><br>Choose target language above</p>
-                <p><strong>2. Enter Text/Upload File</strong><br>Type text or upload document</p>
-                <p><strong>3. Click Translate</strong><br>Get instant translation</p>
-                <p><strong>4. Listen & Download</strong><br>Hear audio and save results</p>
+            <div class="glass-card">
+                <div class="animated-title">📋 Quick Guide</div>
+                <div style="background: linear-gradient(135deg, rgba(102, 126, 234, 0.1), rgba(118, 75, 162, 0.1)); padding: 15px; border-radius: 10px; margin: 10px 0;">
+                    <p><strong>🎯 1. Select Language</strong><br>Choose your target language</p>
+                    <p><strong>📝 2. Enter Text</strong><br>Type or paste your content</p>
+                    <p><strong>🚀 3. Click Translate</strong><br>Get instant AI-powered translation</p>
+                    <p><strong>🔊 4. Listen & Download</strong><br>Hear audio and save results</p>
+                </div>
             </div>
             
-            <div class="sidebar-section">
-                <div class="section-title">✅ Features</div>
-                <p>• 🌍 Auto Language Detection</p>
+            <div class="glass-card" style="margin-top: 15px;">
+                <div class="animated-title">✨ Features</div>
+                <p>• 🌍 1000+ Languages</p>
+                <p>• 🤖 AI-Powered Translation</p>
                 <p>• 🔊 Text-to-Speech</p>
-                <p>• 📥 Download Options</p>
+                <p>• 📁 Document Support</p>
+                <p>• 💾 Download Options</p>
                 <p>• 📊 Translation History</p>
             </div>
             """, unsafe_allow_html=True)
     
-    # Add separator before stats
+    # Platform Statistics Section - At the END with modern design
     st.markdown('<div style="margin-top: 50px;"></div>', unsafe_allow_html=True)
     st.markdown("---")
     
-    # Platform Statistics Section - At the END
-    st.markdown('<div style="text-align: center; font-size: 1.5rem; font-weight: 700; color: #1f2937; margin: 30px 0 20px 0;">📊 Platform Statistics</div>', unsafe_allow_html=True)
+    st.markdown('<div class="animated-title" style="text-align: center; font-size: 2rem; margin: 40px 0 30px 0;">📊 Platform Statistics</div>', unsafe_allow_html=True)
     
     col1, col2, col3, col4 = st.columns(4)
     
     with col1:
         st.markdown("""
-        <div class="stats-card">
-            <div class="stat-number">1000+</div>
-            <div class="stat-label">Languages</div>
+        <div class="gradient-card-1 floating">
+            <div class="glow-number">1000+</div>
+            <div class="glow-label">Languages</div>
+            <div style="margin-top: 10px; font-size: 0.8rem; opacity: 0.9;">Global Coverage</div>
         </div>
         """, unsafe_allow_html=True)
     
     with col2:
         st.markdown("""
-        <div class="stats-card">
-            <div class="stat-number">99.8%</div>
-            <div class="stat-label">Accuracy</div>
+        <div class="gradient-card-2 floating" style="animation-delay: 0.5s;">
+            <div class="glow-number">99.8%</div>
+            <div class="glow-label">Accuracy</div>
+            <div style="margin-top: 10px; font-size: 0.8rem; opacity: 0.9;">AI-Powered</div>
         </div>
         """, unsafe_allow_html=True)
     
     with col3:
         st.markdown("""
-        <div class="stats-card">
-            <div class="stat-number">24/7</div>
-            <div class="stat-label">Available</div>
+        <div class="gradient-card-3 floating" style="animation-delay: 1s;">
+            <div class="glow-number">24/7</div>
+            <div class="glow-label">Available</div>
+            <div style="margin-top: 10px; font-size: 0.8rem; opacity: 0.9;">Instant Results</div>
         </div>
         """, unsafe_allow_html=True)
     
     with col4:
         translations_count = len(st.session_state.translation_history)
         st.markdown(f"""
-        <div class="stats-card">
-            <div class="stat-number">{translations_count}</div>
-            <div class="stat-label">Translations</div>
+        <div class="gradient-card-4 floating" style="animation-delay: 1.5s;">
+            <div class="glow-number">{translations_count}</div>
+            <div class="glow-label">Translations</div>
+            <div style="margin-top: 10px; font-size: 0.8rem; opacity: 0.9;">Your Session</div>
         </div>
         """, unsafe_allow_html=True)
+    
+    # Modern Footer
+    st.markdown("""
+    <div style="margin-top: 50px; text-align: center; padding: 30px; background: linear-gradient(135deg, rgba(102, 126, 234, 0.1), rgba(118, 75, 162, 0.1)); border-radius: 20px;">
+        <h3 style="color: #1f2937; margin-bottom: 10px;">🚀 AI Translator Pro</h3>
+        <p style="color: #6b7280; margin-bottom: 20px;">Professional Translation Platform | Powered by AI Technology</p>
+        <div style="display: flex; justify-content: center; gap: 20px; font-size: 1.5rem;">
+            <span>🌍</span><span>🤖</span><span>🔊</span><span>📁</span><span>💾</span>
+        </div>
+        <p style="color: #6b7280; font-size: 0.9rem; margin-top: 20px;">© 2024 AI Translator Pro | All Rights Reserved</p>
+    </div>
+    """, unsafe_allow_html=True)
 
 # -----------------------------
 # Sidebar
@@ -647,28 +801,29 @@ def show_translator():
 def show_sidebar():
     with st.sidebar:
         st.markdown("""
-        <div style='text-align: center; padding: 15px 0; margin-bottom: 15px;'>
-            <h3 style='color: #1f2937; margin: 0;'>🌐 AI Translator</h3>
-            <p style='color: #6b7280; margin: 5px 0 0 0; font-size: 0.9rem;'>Professional Translation Platform</p>
+        <div style='text-align: center; padding: 20px 0; margin-bottom: 20px; background: linear-gradient(135deg, #667eea, #764ba2); border-radius: 15px;'>
+            <h2 style='color: white; margin: 0;'>🚀</h2>
+            <h3 style='color: white; margin: 10px 0;'>AI Translator Pro</h3>
+            <p style='color: rgba(255,255,255,0.9); margin: 0; font-size: 0.8rem;'>Professional Platform</p>
         </div>
         """, unsafe_allow_html=True)
         
         # Navigation
-        st.markdown('<div class="sidebar-section">', unsafe_allow_html=True)
+        st.markdown('<div class="glass-card">', unsafe_allow_html=True)
         st.markdown("**🧭 Navigation**")
         if st.button("🔍 **Translator**", use_container_width=True, type="primary"):
             st.session_state.current_page = "Translator"
             st.rerun()
         
-        if st.button("📚 **Translation History**", use_container_width=True):
+        if st.button("📚 **History**", use_container_width=True):
             st.session_state.current_page = "History"
             st.rerun()
         st.markdown('</div>', unsafe_allow_html=True)
         
         # Quick Actions
-        st.markdown('<div class="sidebar-section">', unsafe_allow_html=True)
+        st.markdown('<div class="glass-card">', unsafe_allow_html=True)
         st.markdown("**⚡ Quick Actions**")
-        if st.button("🔄 **Clear Current**", use_container_width=True):
+        if st.button("🔄 **Clear All**", use_container_width=True):
             st.session_state.input_text = ""
             if 'translated_text' in st.session_state:
                 del st.session_state.translated_text
@@ -678,76 +833,10 @@ def show_sidebar():
         st.markdown('</div>', unsafe_allow_html=True)
         
         # Session Info
-        st.markdown('<div class="sidebar-section">', unsafe_allow_html=True)
+        st.markdown('<div class="glass-card">', unsafe_allow_html=True)
         st.markdown("**📊 Session Stats**")
         translations_count = len(st.session_state.translation_history)
-        st.metric("Total Translations", translations_count)
+        st.metric("Translations", translations_count)
         
         if translations_count > 0:
-            total_chars = sum(entry.get('characters', 0) for entry in st.session_state.translation_history)
-            st.metric("Total Characters", f"{total_chars:,}")
-        st.markdown('</div>', unsafe_allow_html=True)
-
-# -----------------------------
-# History Page
-# -----------------------------
-def show_history_page():
-    st.markdown('<h1 class="main-header">📚 Translation History</h1>', unsafe_allow_html=True)
-    
-    if not st.session_state.translation_history:
-        st.info("No translation history available. Start translating to see your history here.")
-        return
-    
-    # History Statistics
-    col1, col2, col3 = st.columns(3)
-    with col1:
-        st.metric("Total Translations", len(st.session_state.translation_history))
-    with col2:
-        total_chars = sum(entry.get('characters', 0) for entry in st.session_state.translation_history)
-        st.metric("Total Characters", f"{total_chars:,}")
-    with col3:
-        if st.button("🗑️ Clear All History", use_container_width=True):
-            st.session_state.translation_history = []
-            st.rerun()
-    
-    # History Items
-    for i, entry in enumerate(reversed(st.session_state.translation_history)):
-        with st.expander(f"📅 {entry['timestamp']} | {entry['source']} → {entry['target']} | {entry.get('characters', 0)} chars"):
-            col1, col2 = st.columns(2)
-            with col1:
-                st.markdown("**Original Text:**")
-                st.write(entry['original'])
-            with col2:
-                st.markdown("**Translated Text:**")
-                st.write(entry['translated'])
-            
-            col1, col2, col3 = st.columns(3)
-            with col1:
-                if st.button(f"🔊 Listen", key=f"audio_{i}"):
-                    audio_bytes = text_to_speech(entry['translated'], LANGUAGES[entry['target']])
-                    if audio_bytes:
-                        st.audio(audio_bytes, format="audio/mp3")
-            with col2:
-                if st.button(f"🔄 Reuse", key=f"reuse_{i}"):
-                    st.session_state.input_text = entry['original']
-                    st.session_state.target_lang = entry['target']
-                    st.session_state.current_page = "Translator"
-                    st.rerun()
-            with col3:
-                if st.button(f"🗑️ Delete", key=f"delete_{i}"):
-                    st.session_state.translation_history.pop(-(i+1))
-                    st.rerun()
-
-# -----------------------------
-# Main App
-# -----------------------------
-def main():
-    show_sidebar()
-    
-    if st.session_state.current_page == "Translator":
-        show_translator()
-    elif st.session_state.current_page == "History":
-        show_history_page()
-
-if __name__ == "__main__":
-    main()
+            total_chars

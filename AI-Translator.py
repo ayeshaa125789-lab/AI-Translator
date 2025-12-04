@@ -12,10 +12,10 @@ import tempfile
 import hashlib
 import base64
 import time
-from streamlit_lottie import st_lottie
 import requests
 import pandas as pd
 import plotly.express as px
+import plotly.graph_objects as go
 
 # -----------------------------
 # App Configuration
@@ -308,8 +308,62 @@ st.markdown("""
         border-radius: 10px;
         transition: width 0.5s ease;
     }
+    
+    /* Feature Icons */
+    .feature-icon {
+        font-size: 2.5rem;
+        margin-bottom: 15px;
+        display: inline-block;
+        background: linear-gradient(135deg, #667eea, #764ba2);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+    }
+    
+    /* Custom buttons */
+    .custom-button {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        border: none;
+        padding: 12px 24px;
+        border-radius: 12px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        text-align: center;
+        display: inline-block;
+        text-decoration: none;
+    }
+    
+    .custom-button:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 10px 25px rgba(102, 126, 234, 0.4);
+        color: white;
+    }
 </style>
 """, unsafe_allow_html=True)
+
+# -----------------------------
+# Helper Functions for Animations
+# -----------------------------
+def get_loading_animation():
+    """Return HTML for loading animation"""
+    return """
+    <div style="text-align: center; padding: 40px;">
+        <div class="loading-spinner" style="margin: 0 auto;"></div>
+        <p style="margin-top: 20px; color: #667eea; font-weight: 600;">Processing your translation...</p>
+    </div>
+    """
+
+def get_welcome_animation():
+    """Return HTML for welcome animation"""
+    return """
+    <div style="text-align: center; padding: 30px;">
+        <div style="font-size: 4rem; margin-bottom: 20px;">🚀</div>
+        <h3 style="color: #1f2937; margin-bottom: 10px;">Welcome to AI Translator Pro</h3>
+        <p style="color: #6b7280;">Start translating by typing text or uploading a document</p>
+    </div>
+    """
 
 # -----------------------------
 # Session State Management with Local Storage
@@ -340,6 +394,7 @@ if "app_stats" not in st.session_state:
 # Connection Monitoring
 # -----------------------------
 def check_connection():
+    """Check internet connection status"""
     try:
         response = requests.get("https://www.google.com", timeout=3)
         st.session_state.connection_status = "online"
@@ -352,6 +407,7 @@ def check_connection():
 # Enhanced Translation Function with Retry Logic
 # -----------------------------
 def translate_text_with_retry(text, target_lang, source_lang='auto', max_retries=3):
+    """Translate text with retry logic for better connectivity"""
     for attempt in range(max_retries):
         try:
             if source_lang == 'auto':
@@ -512,6 +568,7 @@ LANGUAGES = {
 # File Processing Functions
 # -----------------------------
 def extract_text_from_pdf(uploaded_file):
+    """Extract text from PDF file"""
     try:
         text = ""
         with pdfplumber.open(uploaded_file) as pdf:
@@ -520,17 +577,21 @@ def extract_text_from_pdf(uploaded_file):
                 if page_text:
                     text += page_text + "\n"
         return text.strip() if text.strip() else ""
-    except:
+    except Exception as e:
+        st.error(f"Error extracting PDF: {str(e)}")
         return ""
 
 def extract_text_from_txt(uploaded_file):
+    """Extract text from TXT file"""
     try:
         text = uploaded_file.read().decode('utf-8')
         return text
-    except:
+    except Exception as e:
+        st.error(f"Error reading text file: {str(e)}")
         return ""
 
 def extract_text_from_docx(uploaded_file):
+    """Extract text from DOCX file"""
     try:
         doc = Document(uploaded_file)
         text = ""
@@ -538,10 +599,12 @@ def extract_text_from_docx(uploaded_file):
             if paragraph.text:
                 text += paragraph.text + "\n"
         return text.strip() if text.strip() else ""
-    except:
+    except Exception as e:
+        st.error(f"Error extracting DOCX: {str(e)}")
         return ""
 
 def extract_text_from_file(uploaded_file):
+    """Extract text from various file formats"""
     file_ext = uploaded_file.name.split('.')[-1].lower()
     
     if file_ext == 'pdf':
@@ -557,19 +620,22 @@ def extract_text_from_file(uploaded_file):
 # Enhanced Text-to-Speech Function
 # -----------------------------
 def text_to_speech(text, lang_code):
+    """Convert text to speech audio"""
     try:
         tts = gTTS(text=text, lang=lang_code)
         audio_bytes = BytesIO()
         tts.write_to_fp(audio_bytes)
         audio_bytes.seek(0)
         return audio_bytes
-    except:
+    except Exception as e:
+        st.warning(f"Audio generation failed: {str(e)}")
         return None
 
 # -----------------------------
 # Main Translator Interface
 # -----------------------------
 def show_translator():
+    """Main translator interface"""
     # Check connection status
     check_connection()
     
@@ -598,7 +664,7 @@ def show_translator():
     st.markdown('<p style="text-align: center; color: #6b7280; font-size: 1.2rem; margin-bottom: 30px;">Professional Translation Platform | AI-Powered Language Solutions</p>', unsafe_allow_html=True)
     
     # Modern Tab Interface
-    tab1, tab2, tab3 = st.tabs(["🔤 **Text Translator**", "📄 **Document Translator**", "📊 **Analytics**"])
+    tab1, tab2, tab3 = st.tabs(["🔤 **Text Translator**", "📄 **Document Translator**", "📊 **Analytics Dashboard**"])
     
     with tab1:
         # Text Translation Interface
@@ -608,19 +674,8 @@ def show_translator():
             st.markdown('<div class="modern-input">', unsafe_allow_html=True)
             st.markdown('<div class="animated-title">📝 Source Text</div>', unsafe_allow_html=True)
             
-            # Language detection info
-            st.markdown("""
-            <div style="background: linear-gradient(135deg, rgba(67, 233, 123, 0.1), rgba(56, 249, 215, 0.1)); 
-                        padding: 10px; border-radius: 10px; margin-bottom: 15px; border-left: 4px solid #43e97b;">
-                <div style="display: flex; align-items: center; gap: 10px;">
-                    <span style="font-size: 1.2rem;">🤖</span>
-                    <div>
-                        <strong>Auto-Detection Active</strong><br>
-                        <small>AI will automatically detect your input language</small>
-                    </div>
-                </div>
-            </div>
-            """, unsafe_allow_html=True)
+            # Auto-detection info
+            st.info("🤖 **Auto-Detection Active**: AI will automatically detect your input language")
             
             input_text = st.text_area(
                 "",
@@ -646,7 +701,7 @@ def show_translator():
             st.markdown('<div class="animated-title">🎯 Target Language</div>', unsafe_allow_html=True)
             
             # Language selection with search
-            search_term = st.text_input("🔍 Search Language", placeholder="Type to filter languages...")
+            search_term = st.text_input("🔍 Search Language", placeholder="Type to filter languages...", key="lang_search")
             
             if search_term:
                 filtered_langs = {k: v for k, v in LANGUAGES.items() if search_term.lower() in k.lower()}
@@ -657,33 +712,37 @@ def show_translator():
                 "Select translation language:",
                 list(filtered_langs.keys()),
                 index=list(filtered_langs.keys()).index("Urdu") if "Urdu" in filtered_langs else 0,
-                key="target_lang"
+                key="target_lang_select"
             )
             
             # Language info card
+            lang_code = LANGUAGES[target_lang]
             st.markdown(f"""
             <div class="glass-card" style="margin-top: 20px; padding: 15px;">
                 <div style="display: flex; align-items: center; justify-content: space-between;">
                     <div>
                         <h4 style="margin: 0;">{target_lang}</h4>
-                        <p style="color: #6b7280; margin: 5px 0 0 0;">Code: {LANGUAGES[target_lang]}</p>
+                        <p style="color: #6b7280; margin: 5px 0 0 0;">Language Code: {lang_code}</p>
                     </div>
                     <div style="font-size: 2rem;">{"🇵🇰" if target_lang == "Urdu" else "🌍"}</div>
                 </div>
             </div>
             """, unsafe_allow_html=True)
             
-            # Translate button with progress indicator
-            if st.button("🚀 **Translate Now**", use_container_width=True, type="primary", key="translate_btn"):
-                if input_text.strip():
-                    progress_bar = st.progress(0)
+            # Translate button
+            translate_clicked = st.button("🚀 **Translate Now**", use_container_width=True, type="primary", key="translate_main_btn")
+            
+            if translate_clicked:
+                if input_text and input_text.strip():
+                    # Create a placeholder for progress
+                    progress_placeholder = st.empty()
                     
-                    for i in range(100):
-                        time.sleep(0.01)
-                        progress_bar.progress(i + 1)
+                    # Show loading animation
+                    progress_placeholder.markdown(get_loading_animation(), unsafe_allow_html=True)
                     
                     try:
-                        translated_text = translate_text_with_retry(input_text, LANGUAGES[target_lang])
+                        # Translate text
+                        translated_text = translate_text_with_retry(input_text, lang_code)
                         
                         # Update session state
                         st.session_state.translated_text = translated_text
@@ -705,12 +764,13 @@ def show_translator():
                         }
                         st.session_state.translation_history.append(history_entry)
                         
-                        progress_bar.empty()
+                        # Clear progress placeholder
+                        progress_placeholder.empty()
                         st.success("✅ **Translation Completed Successfully!**")
                         st.rerun()
                         
                     except Exception as e:
-                        progress_bar.empty()
+                        progress_placeholder.empty()
                         st.error(f"❌ **Translation Error:** {str(e)}")
                 else:
                     st.warning("⚠️ **Please enter some text to translate**")
@@ -722,15 +782,16 @@ def show_translator():
             st.markdown('<div class="modern-output">', unsafe_allow_html=True)
             st.markdown(f'<div class="animated-title">📋 Translation Results - {st.session_state.translated_lang}</div>', unsafe_allow_html=True)
             
-            col1, col2 = st.columns(2)
+            # Display original and translated text side by side
+            col_left, col_right = st.columns(2)
             
-            with col1:
+            with col_left:
                 st.markdown("**Original Text:**")
-                st.text_area("", input_text, height=150, key="original_display", disabled=True)
+                st.text_area("", st.session_state.input_text, height=150, key="original_display_area", disabled=True)
             
-            with col2:
+            with col_right:
                 st.markdown(f"**Translated Text ({st.session_state.translated_lang}):**")
-                st.text_area("", st.session_state.translated_text, height=150, key="translated_display", disabled=True)
+                st.text_area("", st.session_state.translated_text, height=150, key="translated_display_area", disabled=True)
             
             # Action Buttons Row
             st.markdown("---")
@@ -739,11 +800,14 @@ def show_translator():
             col1, col2, col3, col4 = st.columns(4)
             
             with col1:
+                # Text to Speech
                 audio_bytes = text_to_speech(st.session_state.translated_text, LANGUAGES[st.session_state.translated_lang])
                 if audio_bytes:
                     st.audio(audio_bytes, format="audio/mp3")
+                    st.caption("🔊 Listen to translation")
             
             with col2:
+                # Download Text
                 st.download_button(
                     "💾 Download Text",
                     data=st.session_state.translated_text,
@@ -753,6 +817,7 @@ def show_translator():
                 )
             
             with col3:
+                # Download Audio
                 if audio_bytes:
                     st.download_button(
                         "🎵 Download Audio",
@@ -763,400 +828,32 @@ def show_translator():
                     )
             
             with col4:
-                if st.button("🔄 New Translation", use_container_width=True):
+                # New Translation
+                if st.button("🔄 New", use_container_width=True):
                     st.session_state.input_text = ""
                     if 'translated_text' in st.session_state:
                         del st.session_state.translated_text
                     st.rerun()
             
             st.markdown('</div>', unsafe_allow_html=True)
+        else:
+            # Show welcome message when no translation
+            st.markdown(get_welcome_animation(), unsafe_allow_html=True)
     
     with tab2:
         # Document Translation
-        col1, col2 = st.columns([2, 1])
+        st.markdown('<div class="modern-input">', unsafe_allow_html=True)
+        st.markdown('<div class="animated-title">📁 Document Translation</div>', unsafe_allow_html=True)
         
-        with col1:
-            st.markdown('<div class="modern-input">', unsafe_allow_html=True)
-            st.markdown('<div class="animated-title">📁 Document Upload</div>', unsafe_allow_html=True)
-            
+        col_left, col_right = st.columns([2, 1])
+        
+        with col_left:
             uploaded_file = st.file_uploader(
                 "**Upload your document**",
                 type=['pdf', 'txt', 'docx'],
-                help="Supported formats: PDF, TXT, DOCX (Max 200MB)"
+                help="Supported formats: PDF, TXT, DOCX (Max 200MB)",
+                key="doc_uploader"
             )
             
             if uploaded_file is not None:
-                file_size = len(uploaded_file.getvalue()) / (1024 * 1024)  # MB
-                
-                col_size, col_type = st.columns(2)
-                with col_size:
-                    st.metric("📏 File Size", f"{file_size:.2f} MB")
-                with col_type:
-                    st.metric("📄 File Type", uploaded_file.name.split('.')[-1].upper())
-                
-                with st.spinner("🔍 Extracting text from document..."):
-                    extracted_text = extract_text_from_file(uploaded_file)
-                
-                if extracted_text and extracted_text.strip():
-                    with st.expander("📖 View Extracted Content", expanded=True):
-                        st.text_area("", extracted_text, height=200, label_visibility="collapsed")
-                    
-                    if st.button("🚀 Translate Document", use_container_width=True, type="primary"):
-                        with st.spinner("🔄 Translating document..."):
-                            try:
-                                translated_doc = translate_text_with_retry(extracted_text, LANGUAGES[target_lang])
-                                
-                                st.success("✅ Document translation completed!")
-                                
-                                # Display translated document
-                                st.markdown("**Translated Document:**")
-                                st.text_area("", translated_doc, height=200, label_visibility="collapsed")
-                                
-                                # Download options
-                                col_dl1, col_dl2 = st.columns(2)
-                                with col_dl1:
-                                    st.download_button(
-                                        "💾 Download Text",
-                                        data=translated_doc,
-                                        file_name=f"translated_{uploaded_file.name.split('.')[0]}.txt",
-                                        mime="text/plain",
-                                        use_container_width=True
-                                    )
-                                with col_dl2:
-                                    doc_audio = text_to_speech(translated_doc, LANGUAGES[target_lang])
-                                    if doc_audio:
-                                        st.download_button(
-                                            "🎵 Download Audio",
-                                            data=doc_audio,
-                                            file_name=f"audio_document_{target_lang}.mp3",
-                                            mime="audio/mp3",
-                                            use_container_width=True
-                                        )
-                                
-                            except Exception as e:
-                                st.error(f"❌ Document translation failed: {str(e)}")
-                else:
-                    st.error("⚠️ Could not extract text from the document")
-            else:
-                st.markdown("""
-                <div style="text-align: center; padding: 40px; border: 2px dashed #cbd5e1; border-radius: 15px; margin: 20px 0;">
-                    <div style="font-size: 3rem; margin-bottom: 20px;">📁</div>
-                    <h3>Upload Document</h3>
-                    <p style="color: #6b7280;">Drag & drop or click to upload</p>
-                    <div style="display: flex; justify-content: center; gap: 20px; margin-top: 20px; font-size: 2rem;">
-                        <span title="PDF">📄</span>
-                        <span title="Text">📝</span>
-                        <span title="Word">📘</span>
-                    </div>
-                </div>
-                """, unsafe_allow_html=True)
-            
-            st.markdown('</div>', unsafe_allow_html=True)
-        
-        with col2:
-            st.markdown("""
-            <div class="glass-card">
-                <div class="animated-title">📋 Supported Formats</div>
-                <div style="margin: 15px 0;">
-                    <div style="display: flex; align-items: center; gap: 10px; margin: 10px 0; padding: 10px; background: rgba(102, 126, 234, 0.1); border-radius: 10px;">
-                        <span style="font-size: 1.5rem;">📄</span>
-                        <div>
-                            <strong>PDF Documents</strong><br>
-                            <small>Extracts text from PDF files</small>
-                        </div>
-                    </div>
-                    
-                    <div style="display: flex; align-items: center; gap: 10px; margin: 10px 0; padding: 10px; background: rgba(245, 87, 108, 0.1); border-radius: 10px;">
-                        <span style="font-size: 1.5rem;">📝</span>
-                        <div>
-                            <strong>Text Files</strong><br>
-                            <small>Supports .txt format</small>
-                        </div>
-                    </div>
-                    
-                    <div style="display: flex; align-items: center; gap: 10px; margin: 10px 0; padding: 10px; background: rgba(79, 172, 254, 0.1); border-radius: 10px;">
-                        <span style="font-size: 1.5rem;">📘</span>
-                        <div>
-                            <strong>Word Documents</strong><br>
-                            <small>Supports .docx format</small>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            
-            <div class="glass-card" style="margin-top: 20px;">
-                <div class="animated-title">💡 Tips</div>
-                <ul style="color: #6b7280;">
-                    <li>Ensure documents are readable</li>
-                    <li>Max file size: 200MB</li>
-                    <li>Use clear text formatting</li>
-                    <li>Check extraction preview</li>
-                    <li>Save translated files</li>
-                </ul>
-            </div>
-            """, unsafe_allow_html=True)
-    
-    with tab3:
-        # Analytics Dashboard
-        st.markdown('<div class="modern-input">', unsafe_allow_html=True)
-        st.markdown('<div class="animated-title">📊 Translation Analytics</div>', unsafe_allow_html=True)
-        
-        if st.session_state.translation_history:
-            # Convert history to DataFrame
-            df = pd.DataFrame(st.session_state.translation_history)
-            
-            # Stats Cards
-            col1, col2, col3, col4 = st.columns(4)
-            
-            with col1:
-                st.markdown("""
-                <div class="gradient-card-1">
-                    <div class="glow-number">{}</div>
-                    <div class="glow-label">Total Translations</div>
-                </div>
-                """.format(len(df)), unsafe_allow_html=True)
-            
-            with col2:
-                total_chars = df['characters'].sum() if 'characters' in df.columns else 0
-                st.markdown("""
-                <div class="gradient-card-2">
-                    <div class="glow-number">{}</div>
-                    <div class="glow-label">Total Characters</div>
-                </div>
-                """.format(total_chars), unsafe_allow_html=True)
-            
-            with col3:
-                avg_chars = total_chars // len(df) if len(df) > 0 else 0
-                st.markdown("""
-                <div class="gradient-card-3">
-                    <div class="glow-number">{}</div>
-                    <div class="glow-label">Avg. Length</div>
-                </div>
-                """.format(avg_chars), unsafe_allow_html=True)
-            
-            with col4:
-                most_common_lang = df['target'].mode()[0] if not df['target'].mode().empty else "N/A"
-                st.markdown("""
-                <div class="gradient-card-4">
-                    <div style="font-size: 1.8rem; font-weight: 800;">{}</div>
-                    <div class="glow-label">Most Used Language</div>
-                </div>
-                """.format(most_common_lang), unsafe_allow_html=True)
-            
-            # Charts
-            col_chart1, col_chart2 = st.columns(2)
-            
-            with col_chart1:
-                if 'target' in df.columns:
-                    lang_counts = df['target'].value_counts().head(10)
-                    fig1 = px.bar(
-                        lang_counts,
-                        title="Top 10 Translated Languages",
-                        labels={'value': 'Count', 'index': 'Language'},
-                        color=lang_counts.values,
-                        color_continuous_scale='Viridis'
-                    )
-                    fig1.update_layout(showlegend=False)
-                    st.plotly_chart(fig1, use_container_width=True)
-            
-            with col_chart2:
-                if 'timestamp' in df.columns:
-                    df['hour'] = pd.to_datetime(df['timestamp']).dt.hour
-                    hour_counts = df['hour'].value_counts().sort_index()
-                    fig2 = px.line(
-                        hour_counts,
-                        title="Translation Activity by Hour",
-                        labels={'value': 'Count', 'index': 'Hour'}
-                    )
-                    fig2.update_layout(showlegend=False)
-                    st.plotly_chart(fig2, use_container_width=True)
-            
-            # Recent Translations Table
-            st.markdown("**Recent Translations:**")
-            st.dataframe(
-                df[['timestamp', 'source', 'target', 'characters']].head(10),
-                use_container_width=True
-            )
-            
-            # Export Data
-            col_exp1, col_exp2 = st.columns(2)
-            with col_exp1:
-                csv = df.to_csv(index=False)
-                st.download_button(
-                    "📥 Export as CSV",
-                    data=csv,
-                    file_name="translation_history.csv",
-                    mime="text/csv",
-                    use_container_width=True
-                )
-            with col_exp2:
-                json_data = df.to_json(indent=2, orient='records')
-                st.download_button(
-                    "📥 Export as JSON",
-                    data=json_data,
-                    file_name="translation_history.json",
-                    mime="application/json",
-                    use_container_width=True
-                )
-        else:
-            st.info("📊 **No translation data available yet. Start translating to see analytics!**")
-        
-        st.markdown('</div>', unsafe_allow_html=True)
-    
-    # Footer with Enhanced Stats
-    st.markdown("""
-    <div style="margin-top: 50px; text-align: center; padding: 30px; background: linear-gradient(135deg, rgba(102, 126, 234, 0.1), rgba(118, 75, 162, 0.1)); border-radius: 20px;">
-        <h3 style="color: #1f2937; margin-bottom: 10px;">🚀 AI Translator Pro</h3>
-        <p style="color: #6b7280; margin-bottom: 20px;">Professional Translation Platform | Powered by Advanced AI Technology</p>
-        
-        <div style="display: flex; justify-content: center; gap: 30px; margin-top: 20px;">
-            <div style="text-align: center;">
-                <div style="font-size: 1.8rem; font-weight: 800; color: #667eea;">{}</div>
-                <div style="font-size: 0.9rem; color: #6b7280;">Languages</div>
-            </div>
-            <div style="text-align: center;">
-                <div style="font-size: 1.8rem; font-weight: 800; color: #f5576c;">{}</div>
-                <div style="font-size: 0.9rem; color: #6b7280;">Translations</div>
-            </div>
-            <div style="text-align: center;">
-                <div style="font-size: 1.8rem; font-weight: 800; color: #4facfe;">24/7</div>
-                <div style="font-size: 0.9rem; color: #6b7280;">Availability</div>
-            </div>
-            <div style="text-align: center;">
-                <div style="font-size: 1.8rem; font-weight: 800; color: #43e97b;">{}</div>
-                <div style="font-size: 0.9rem; color: #6b7280;">Total Chars</div>
-            </div>
-        </div>
-        
-        <p style="color: #6b7280; font-size: 0.9rem; margin-top: 30px;">© 2024 AI Translator Pro | All Rights Reserved</p>
-    </div>
-    """.format(len(LANGUAGES), 
-               len(st.session_state.translation_history),
-               st.session_state.app_stats.get("total_characters", 0)), unsafe_allow_html=True)
-
-# -----------------------------
-# Sidebar with Enhanced Features
-# -----------------------------
-def show_sidebar():
-    with st.sidebar:
-        # App Logo and Info
-        st.markdown("""
-        <div style='text-align: center; padding: 20px 0; margin-bottom: 20px; 
-                    background: linear-gradient(135deg, #667eea, #764ba2); 
-                    border-radius: 15px;'>
-            <h2 style='color: white; margin: 0; font-size: 3rem;'>🚀</h2>
-            <h3 style='color: white; margin: 10px 0;'>AI Translator Pro</h3>
-            <p style='color: rgba(255,255,255,0.9); margin: 0; font-size: 0.8rem;'>
-                Version 2.0 | Professional Edition
-            </p>
-        </div>
-        """, unsafe_allow_html=True)
-        
-        # Connection Status
-        status_color = "#10B981" if st.session_state.connection_status == "online" else "#EF4444"
-        st.markdown(f"""
-        <div class="glass-card">
-            <div style="display: flex; align-items: center; justify-content: space-between;">
-                <div style="font-weight: 600;">Connection Status</div>
-                <div style="display: flex; align-items: center; gap: 8px;">
-                    <div style="width: 10px; height: 10px; background-color: {status_color}; 
-                                border-radius: 50%; box-shadow: 0 0 10px {status_color};"></div>
-                    <span>{st.session_state.connection_status.upper()}</span>
-                </div>
-            </div>
-            <div style="margin-top: 10px;">
-                <small>Last checked: {datetime.now().strftime("%H:%M:%S")}</small>
-            </div>
-        </div>
-        """, unsafe_allow_html=True)
-        
-        # Navigation
-        st.markdown('<div class="glass-card">', unsafe_allow_html=True)
-        st.markdown("**🧭 Navigation**")
-        
-        nav_col1, nav_col2 = st.columns(2)
-        with nav_col1:
-            if st.button("🔤 **Translator**", use_container_width=True, type="primary"):
-                st.session_state.current_page = "Translator"
-                st.rerun()
-        with nav_col2:
-            if st.button("📊 **Analytics**", use_container_width=True):
-                st.session_state.current_page = "Analytics"
-                st.rerun()
-        
-        st.markdown('</div>', unsafe_allow_html=True)
-        
-        # Quick Actions
-        st.markdown('<div class="glass-card">', unsafe_allow_html=True)
-        st.markdown("**⚡ Quick Actions**")
-        
-        if st.button("🔄 Clear Session", use_container_width=True):
-            st.session_state.input_text = ""
-            st.session_state.translation_history = []
-            if 'translated_text' in st.session_state:
-                del st.session_state.translated_text
-            st.success("Session cleared!")
-            st.rerun()
-        
-        if st.button("📥 Export All Data", use_container_width=True):
-            if st.session_state.translation_history:
-                df = pd.DataFrame(st.session_state.translation_history)
-                csv = df.to_csv(index=False)
-                st.download_button(
-                    "Download CSV",
-                    data=csv,
-                    file_name="all_translations.csv",
-                    mime="text/csv"
-                )
-            else:
-                st.warning("No data to export")
-        
-        st.markdown('</div>', unsafe_allow_html=True)
-        
-        # App Statistics
-        st.markdown('<div class="glass-card">', unsafe_allow_html=True)
-        st.markdown("**📈 App Statistics**")
-        
-        stats = st.session_state.app_stats
-        st.metric("Total Translations", stats.get("total_translations", 0))
-        st.metric("Total Characters", stats.get("total_characters", 0))
-        st.metric("Last Active", stats.get("last_active", "Never"))
-        
-        st.markdown('</div>', unsafe_allow_html=True)
-        
-        # Language Quick Select
-        st.markdown('<div class="glass-card">', unsafe_allow_html=True)
-        st.markdown("**🌍 Quick Language Select**")
-        
-        popular_langs = ['Urdu', 'English', 'Arabic', 'Hindi', 'Spanish', 'French']
-        selected_lang = st.selectbox("Choose language:", popular_langs)
-        if selected_lang != st.session_state.target_lang:
-            st.session_state.target_lang = selected_lang
-            st.rerun()
-        
-        st.markdown('</div>', unsafe_allow_html=True)
-
-# -----------------------------
-# Main App Flow
-# -----------------------------
-def main():
-    # Initialize connection check
-    if 'connection_checked' not in st.session_state:
-        check_connection()
-        st.session_state.connection_checked = True
-    
-    # Show sidebar
-    show_sidebar()
-    
-    # Show main content based on current page
-    if st.session_state.current_page == "Translator":
-        show_translator()
-    elif st.session_state.current_page == "Analytics":
-        # Show analytics in main area
-        show_translator()  # This will show the analytics tab
-
-# -----------------------------
-# Run the App
-# -----------------------------
-if __name__ == "__main__":
-    main()
+                file_size = len(uploaded_file.get

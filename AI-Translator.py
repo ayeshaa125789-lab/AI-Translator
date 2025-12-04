@@ -856,4 +856,74 @@ def show_translator():
             )
             
             if uploaded_file is not None:
-                file_size = len(uploaded_file.get
+                file_size = len(uploaded_file.getvalue()) / (1024 * 1024)  # MB
+                
+                # File info
+                col_size, col_type = st.columns(2)
+                with col_size:
+                    st.metric("📏 File Size", f"{file_size:.2f} MB")
+                with col_type:
+                    st.metric("📄 File Type", uploaded_file.name.split('.')[-1].upper())
+                
+                # Extract text
+                with st.spinner("🔍 Extracting text from document..."):
+                    extracted_text = extract_text_from_file(uploaded_file)
+                
+                if extracted_text and extracted_text.strip():
+                    with st.expander("📖 View Extracted Content", expanded=True):
+                        st.text_area("", extracted_text, height=200, label_visibility="collapsed", key="extracted_text_area")
+                    
+                    # Target language selection for document
+                    doc_target_lang = st.selectbox(
+                        "Select target language for document:",
+                        list(LANGUAGES.keys()),
+                        index=list(LANGUAGES.keys()).index("Urdu"),
+                        key="doc_target_lang"
+                    )
+                    
+                    # Translate document button
+                    if st.button("🚀 Translate Document", use_container_width=True, type="primary", key="translate_doc_btn"):
+                        with st.spinner("🔄 Translating document..."):
+                            try:
+                                translated_doc = translate_text_with_retry(extracted_text, LANGUAGES[doc_target_lang])
+                                
+                                st.success("✅ Document translation completed!")
+                                
+                                # Display translated document
+                                st.markdown("**Translated Document:**")
+                                st.text_area("", translated_doc, height=200, label_visibility="collapsed", key="translated_doc_area")
+                                
+                                # Download options
+                                col_dl1, col_dl2 = st.columns(2)
+                                with col_dl1:
+                                    st.download_button(
+                                        "💾 Download Text",
+                                        data=translated_doc,
+                                        file_name=f"translated_{uploaded_file.name.split('.')[0]}.txt",
+                                        mime="text/plain",
+                                        use_container_width=True
+                                    )
+                                with col_dl2:
+                                    doc_audio = text_to_speech(translated_doc, LANGUAGES[doc_target_lang])
+                                    if doc_audio:
+                                        st.download_button(
+                                            "🎵 Download Audio",
+                                            data=doc_audio,
+                                            file_name=f"audio_document_{doc_target_lang}.mp3",
+                                            mime="audio/mp3",
+                                            use_container_width=True
+                                        )
+                                
+                            except Exception as e:
+                                st.error(f"❌ Document translation failed: {str(e)}")
+                else:
+                    st.error("⚠️ Could not extract text from the document")
+            else:
+                # Upload prompt
+                st.markdown("""
+                <div style="text-align: center; padding: 40px; border: 2px dashed #cbd5e1; border-radius: 15px; margin: 20px 0;">
+                    <div style="font-size: 3rem; margin-bottom: 20px;">📁</div>
+                    <h3>Upload Your Document</h3>
+                    <p style="color: #6b7280;">Drag & drop or click to upload</p>
+                    <div style="display: flex; justify-content: center; gap: 20px; margin-top: 20px; font-size: 2rem;">
+                        <span title="PDF">📄

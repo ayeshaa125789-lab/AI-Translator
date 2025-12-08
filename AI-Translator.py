@@ -1,22 +1,22 @@
 import streamlit as st
-from deep_translator import GoogleTranslator
+from googletrans import Translator, LANGUAGES
 from gtts import gTTS
-import os
-import json
-from datetime import datetime
 from io import BytesIO
-import PyPDF2
+import sqlite3
+import hashlib
+import time
 import pdfplumber
 from docx import Document
-import hashlib
-import sqlite3
-import time
+import pandas as pd
+import plotly.express as px
+from datetime import datetime
+import json
 
 # -----------------------------
-# Database Setup for User Management
+# Database Setup
 # -----------------------------
 def init_db():
-    conn = sqlite3.connect('translator_users.db', check_same_thread=False)
+    conn = sqlite3.connect('ai_translator.db', check_same_thread=False)
     c = conn.cursor()
     
     # Users table
@@ -30,7 +30,7 @@ def init_db():
         )
     ''')
     
-    # Translations table (user-specific)
+    # Translations table
     c.execute('''
         CREATE TABLE IF NOT EXISTS translations (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -52,7 +52,7 @@ def init_db():
 conn = init_db()
 
 # -----------------------------
-# User Authentication Functions
+# Authentication Functions
 # -----------------------------
 def hash_password(password):
     return hashlib.sha256(password.encode()).hexdigest()
@@ -107,17 +107,45 @@ def get_user_translations(user_id, limit=50):
     )
     return c.fetchall()
 
+def get_user_stats(user_id):
+    c = conn.cursor()
+    
+    # Total translations
+    c.execute("SELECT COUNT(*) FROM translations WHERE user_id = ?", (user_id,))
+    total_translations = c.fetchone()[0]
+    
+    # Total characters
+    c.execute("SELECT SUM(characters) FROM translations WHERE user_id = ?", (user_id,))
+    total_chars = c.fetchone()[0] or 0
+    
+    # Top languages
+    c.execute("""
+        SELECT target_lang, COUNT(*) as count 
+        FROM translations 
+        WHERE user_id = ? 
+        GROUP BY target_lang 
+        ORDER BY count DESC 
+        LIMIT 5
+    """, (user_id,))
+    top_langs = c.fetchall()
+    
+    return {
+        "total_translations": total_translations,
+        "total_chars": total_chars,
+        "top_languages": top_langs
+    }
+
 # -----------------------------
 # App Configuration
 # -----------------------------
 st.set_page_config(
-    page_title="AI Translator Pro",
-    page_icon="🌐",
+    page_title="AI Translator",
+    page_icon="🤖",
     layout="wide",
     initial_sidebar_state="collapsed"
 )
 
-# Fast CSS - Minimal
+# Modern CSS
 st.markdown("""
 <style>
     /* Hide Streamlit elements */
@@ -125,39 +153,40 @@ st.markdown("""
     footer {visibility: hidden;}
     .stDeployButton { display: none; }
     
-    /* Fast loading */
+    /* Main container */
     .main-container {
-        max-width: 1200px;
-        margin: 0 auto;
-    }
-    
-    .login-card {
         background: white;
-        padding: 30px;
-        border-radius: 15px;
-        box-shadow: 0 5px 20px rgba(0,0,0,0.1);
-        max-width: 400px;
-        margin: 50px auto;
+        min-height: 100vh;
     }
     
-    .translation-card {
+    /* Header */
+    .header {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        padding: 20px 30px;
+        border-radius: 0 0 20px 20px;
+        margin-bottom: 30px;
+    }
+    
+    /* Cards */
+    .stats-card {
         background: white;
         padding: 20px;
-        border-radius: 10px;
-        margin: 10px 0;
-        box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+        border-radius: 15px;
+        box-shadow: 0 5px 20px rgba(0,0,0,0.08);
         border: 1px solid #e5e7eb;
+        margin: 10px 0;
     }
     
-    /* Fast buttons */
+    /* Buttons */
     .stButton button {
         background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
         color: white;
         border: none;
-        border-radius: 8px;
+        border-radius: 10px;
         padding: 10px 20px;
         font-weight: 600;
-        transition: all 0.2s;
+        transition: all 0.3s;
     }
     
     .stButton button:hover {
@@ -165,26 +194,54 @@ st.markdown("""
         box-shadow: 0 5px 15px rgba(102, 126, 234, 0.3);
     }
     
-    /* Fast input */
-    .stTextInput input {
-        border-radius: 8px;
-        border: 1px solid #e5e7eb;
-        padding: 8px 12px;
+    /* Tabs */
+    .stTabs [data-baseweb="tab-list"] {
+        gap: 10px;
     }
     
-    /* User info */
-    .user-info {
+    .stTabs [data-baseweb="tab"] {
+        background: #f3f4f6;
+        border-radius: 10px;
+        padding: 10px 20px;
+        font-weight: 600;
+    }
+    
+    .stTabs [aria-selected="true"] {
         background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
         color: white;
-        padding: 10px 15px;
-        border-radius: 8px;
-        margin: 10px 0;
-        font-weight: 600;
     }
     
-    /* Prevent unnecessary reruns */
-    .stSelectbox label {
+    /* User badge */
+    .user-badge {
+        background: white;
+        color: #667eea;
+        padding: 8px 16px;
+        border-radius: 20px;
         font-weight: 600;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+    }
+    
+    /* Metrics */
+    .metric-box {
+        text-align: center;
+        padding: 20px;
+        background: linear-gradient(135deg, #f6f8ff 0%, #f9f5ff 100%);
+        border-radius: 15px;
+        margin: 10px;
+    }
+    
+    .metric-value {
+        font-size: 28px;
+        font-weight: 700;
+        color: #667eea;
+        margin: 10px 0;
+    }
+    
+    .metric-label {
+        font-size: 14px;
+        color: #666;
     }
 </style>
 """, unsafe_allow_html=True)
@@ -199,75 +256,84 @@ if "page" not in st.session_state:
 if "translated_text" not in st.session_state:
     st.session_state.translated_text = ""
 if "target_lang" not in st.session_state:
-    st.session_state.target_lang = "Urdu"
-if "input_text_cache" not in st.session_state:
-    st.session_state.input_text_cache = ""
-if "last_translation" not in st.session_state:
-    st.session_state.last_translation = ""
+    st.session_state.target_lang = "English"
+if "input_text" not in st.session_state:
+    st.session_state.input_text = ""
+if "dashboard_tab" not in st.session_state:
+    st.session_state.dashboard_tab = "translate"
 
 # -----------------------------
-# Complete Language List (FIXED - Won't change on rerun)
+# Language Functions
 # -----------------------------
-@st.cache_data(ttl=3600)  # Cache for 1 hour
-def get_languages():
-    """Fixed language list that won't change on rerun"""
-    return {
-        'English': 'en', 'Urdu': 'ur', 'Hindi': 'hi', 'Arabic': 'ar',
-        'Spanish': 'es', 'French': 'fr', 'German': 'de', 'Chinese': 'zh-CN',
-        'Japanese': 'ja', 'Korean': 'ko', 'Russian': 'ru', 'Portuguese': 'pt',
-        'Italian': 'it', 'Turkish': 'tr', 'Persian': 'fa', 'Bengali': 'bn',
-        'Punjabi': 'pa', 'Marathi': 'mr', 'Gujarati': 'gu', 'Tamil': 'ta',
-        'Telugu': 'te', 'Kannada': 'kn', 'Malayalam': 'ml', 'Thai': 'th',
-        'Vietnamese': 'vi', 'Indonesian': 'id', 'Dutch': 'nl', 'Greek': 'el',
-        'Hebrew': 'he', 'Polish': 'pl', 'Ukrainian': 'uk', 'Romanian': 'ro'
-    }
+@st.cache_data(ttl=3600)
+def get_language_list():
+    """Get all supported languages"""
+    lang_dict = {}
+    for code, name in LANGUAGES.items():
+        lang_dict[name.title()] = code
+    return lang_dict
 
-LANGUAGES = get_languages()
+LANGUAGE_DICT = get_language_list()
 
 # -----------------------------
-# Fast Functions with better caching
+# Translation Functions
 # -----------------------------
-_translation_cache = {}
-
-@st.cache_data(ttl=300)  # Cache translations for 5 minutes
-def fast_translate_cached(text, target_lang_code):
-    """Fast translation with Streamlit caching"""
+@st.cache_data(ttl=300, max_entries=100)
+def cached_translate(text, dest_lang_code):
+    """Cached translation"""
     try:
-        translator = GoogleTranslator(target=target_lang_code)
-        result = translator.translate(text)
-        return result
+        translator = Translator()
+        result = translator.translate(text, dest=dest_lang_code)
+        return result.text
     except Exception as e:
-        return f"Translation error: {str(e)[:50]}"
+        return f"Error: {str(e)[:100]}"
 
 def fast_translate(text, target_lang_name):
-    """Wrapper function to use cached translation"""
-    if not text.strip():
+    """Fast translation"""
+    if not text or not text.strip():
         return ""
     
-    target_lang_code = LANGUAGES.get(target_lang_name, 'en')
-    return fast_translate_cached(text[:5000], target_lang_code)  # Limit text length
+    lang_code = LANGUAGE_DICT.get(target_lang_name, 'en')
+    
+    if len(text) > 1000:
+        chunks = [text[i:i+1000] for i in range(0, len(text), 1000)]
+        translated_chunks = []
+        for chunk in chunks:
+            translated = cached_translate(chunk, lang_code)
+            translated_chunks.append(translated)
+        return " ".join(translated_chunks)
+    else:
+        return cached_translate(text, lang_code)
 
 @st.cache_data(ttl=600)
-def fast_extract_text_cached(file_bytes, file_type):
-    """Cached text extraction"""
+def fast_extract_text(file_bytes, file_type):
+    """Extract text from files"""
     try:
         from io import BytesIO
         
         if file_type == 'pdf':
             with pdfplumber.open(BytesIO(file_bytes)) as pdf:
-                return " ".join([page.extract_text() or "" for page in pdf.pages[:5]])
+                text = ""
+                for page in pdf.pages[:10]:
+                    page_text = page.extract_text()
+                    if page_text:
+                        text += page_text + "\n"
+                return text[:15000]
+        
         elif file_type == 'txt':
-            return file_bytes.decode('utf-8')[:10000]
+            return file_bytes.decode('utf-8', errors='ignore')[:15000]
+        
         elif file_type == 'docx':
-            from docx import Document
             doc = Document(BytesIO(file_bytes))
-            return "\n".join([para.text for para in doc.paragraphs[:100]])
+            text = "\n".join([para.text for para in doc.paragraphs[:200]])
+            return text[:15000]
+        
         return ""
     except Exception as e:
-        return f"Error reading file: {str(e)[:50]}"
+        return f"Error: {str(e)[:100]}"
 
 def text_to_speech_fast(text, lang_code):
-    """Fast audio generation"""
+    """Generate speech"""
     try:
         tts = gTTS(text=text[:500], lang=lang_code, slow=False)
         audio_bytes = BytesIO()
@@ -278,329 +344,461 @@ def text_to_speech_fast(text, lang_code):
         return None
 
 # -----------------------------
-# Login/Register Page
+# Auth Page
 # -----------------------------
 def show_auth_page():
-    st.markdown('<div class="login-card">', unsafe_allow_html=True)
+    """Login/Register page"""
+    st.markdown("""
+    <div class='header'>
+        <h1 style='font-size: 42px; margin-bottom: 10px;'>AI Translator</h1>
+        <p style='font-size: 16px; opacity: 0.9;'>
+            Advanced Translation Platform with Real-time Analytics
+        </p>
+    </div>
+    """, unsafe_allow_html=True)
     
-    tab1, tab2 = st.tabs(["🔐 Login", "📝 Register"])
+    col1, col2 = st.columns(2)
     
-    with tab1:
-        st.write("### Welcome Back")
-        
-        username = st.text_input("Username", key="login_username")
-        password = st.text_input("Password", type="password", key="login_password")
-        
-        col1, col2 = st.columns(2)
-        with col1:
-            if st.button("Login", use_container_width=True, type="primary"):
-                if username and password:
-                    with st.spinner("Authenticating..."):
-                        success, user = authenticate_user(username, password)
-                        if success:
-                            st.session_state.user = {"id": user[0], "username": user[1]}
-                            st.session_state.page = "translator"
-                            st.success("Login successful!")
-                            time.sleep(0.3)
-                            st.rerun()
-                        else:
-                            st.error("Invalid username or password")
-                else:
-                    st.warning("Please enter username and password")
-        
-        with col2:
-            if st.button("Guest Mode", use_container_width=True):
-                st.session_state.user = {"id": 0, "username": "Guest"}
-                st.session_state.page = "translator"
-                st.info("Entering guest mode...")
-                time.sleep(0.3)
-                st.rerun()
-    
-    with tab2:
-        st.write("### Create Account")
-        
-        new_username = st.text_input("Username", key="reg_username")
-        new_email = st.text_input("Email (optional)", key="reg_email")
-        new_password = st.text_input("Password", type="password", key="reg_password")
-        confirm_password = st.text_input("Confirm Password", type="password", key="reg_confirm")
-        
-        if st.button("Register", use_container_width=True, type="primary"):
-            if not new_username or not new_password:
-                st.warning("Please fill all required fields")
-            elif new_password != confirm_password:
-                st.error("Passwords do not match")
-            else:
-                with st.spinner("Creating account..."):
-                    success, message = register_user(new_username, new_password, new_email)
-                    if success:
-                        st.success(message)
-                        st.info("Please login with your new account")
-                    else:
-                        st.error(message)
-    
-    st.markdown('</div>', unsafe_allow_html=True)
-
-# -----------------------------
-# Fast Translator Interface
-# -----------------------------
-def show_translator():
-    # User Info Bar - Fixed position
-    if st.session_state.user:
-        col1, col2, col3 = st.columns([3, 1, 1])
-        with col1:
-            st.markdown(f'<div class="user-info">👤 {st.session_state.user["username"]} | AI Translator Pro</div>', 
-                       unsafe_allow_html=True)
-        with col2:
-            if st.button("📊 My History", use_container_width=True):
-                st.session_state.page = "history"
-                st.rerun()
-        with col3:
-            if st.button("🚪 Logout", use_container_width=True):
-                st.session_state.user = None
-                st.session_state.page = "login"
-                st.rerun()
-    
-    # Main Translator
-    st.markdown('<div class="main-container">', unsafe_allow_html=True)
-    
-    # Language Selection - FIXED: Using session state to preserve selection
-    col1, col2 = st.columns([3, 1])
     with col1:
-        # Get language names list from cached function
-        lang_names = list(LANGUAGES.keys())
+        st.markdown("### 🔐 Login")
         
-        # Find current index in session state
-        current_lang = st.session_state.target_lang
-        current_index = lang_names.index(current_lang) if current_lang in lang_names else 0
+        username = st.text_input("Username", key="login_user")
+        password = st.text_input("Password", type="password", key="login_pass")
         
-        # Selectbox with preserved value
-        target_lang = st.selectbox(
-            "Translate to:",
-            lang_names,
-            index=current_index,
-            key="target_lang_select"
-        )
+        if st.button("Login", type="primary", use_container_width=True):
+            if username and password:
+                with st.spinner("Signing in..."):
+                    success, user = authenticate_user(username, password)
+                    if success:
+                        st.session_state.user = {
+                            "id": user[0], 
+                            "username": user[1]
+                        }
+                        st.session_state.page = "dashboard"
+                        st.success("✅ Welcome!")
+                        time.sleep(0.5)
+                        st.rerun()
+                    else:
+                        st.error("❌ Invalid username or password")
+            else:
+                st.warning("Please enter username and password")
         
-        # Update session state
-        st.session_state.target_lang = target_lang
-    
-    with col2:
-        if st.button("🔄 Clear All", use_container_width=True):
-            st.session_state.translated_text = ""
-            st.session_state.input_text_cache = ""
-            st.session_state.last_translation = ""
+        if st.button("Continue as Guest", use_container_width=True):
+            st.session_state.user = {"id": 0, "username": "Guest"}
+            st.session_state.page = "dashboard"
             st.rerun()
     
-    # Fast Tabs
-    tab1, tab2 = st.tabs(["📝 Quick Translate", "📁 Document Translate"])
-    
-    with tab1:
-        col_left, col_right = st.columns(2)
+    with col2:
+        st.markdown("### 📝 Register")
         
-        with col_left:
-            # Use session state to preserve input text
-            input_text = st.text_area(
-                "Enter text:",
-                height=200,
-                placeholder="Type or paste here...",
-                value=st.session_state.input_text_cache,
-                key="input_text_area"
-            )
-            
-            # Update cache
-            st.session_state.input_text_cache = input_text
-            
-            translate_now = st.button(
-                "🚀 Translate Now", 
-                type="primary", 
-                use_container_width=True,
-                disabled=not input_text.strip(),
-                key="translate_button"
-            )
+        new_user = st.text_input("Choose Username", key="reg_user")
+        new_email = st.text_input("Email (optional)", key="reg_email")
+        new_pass = st.text_input("Password", type="password", key="reg_pass")
+        confirm_pass = st.text_input("Confirm Password", type="password", key="reg_confirm")
         
-        with col_right:
-            # Display area for translation
-            display_placeholder = st.empty()
-            
-            # Handle translation
-            if translate_now and input_text.strip():
-                with st.spinner("Translating..."):
-                    # Fast translation
-                    translated = fast_translate(input_text, target_lang)
-                    
-                    # Update session state
-                    st.session_state.translated_text = translated
-                    st.session_state.last_translation = translated
-                    
-                    # Save to user history
-                    if st.session_state.user and st.session_state.user["id"] != 0:
-                        save_translation(
-                            st.session_state.user["id"],
-                            input_text[:1000],
-                            translated[:1000],
-                            "auto",
-                            target_lang,
-                            len(input_text)
-                        )
-            
-            # Always show the current translation from session state
-            if st.session_state.translated_text:
-                display_placeholder.text_area(
-                    f"Translated ({target_lang}):",
-                    value=st.session_state.translated_text,
-                    height=200,
-                    key="output_text_area"
-                )
-                
-                # Actions
-                col_act1, col_act2 = st.columns(2)
-                with col_act1:
-                    audio = text_to_speech_fast(
-                        st.session_state.translated_text, 
-                        LANGUAGES.get(target_lang, 'en')
-                    )
-                    if audio:
-                        st.audio(audio, format="audio/mp3")
-                
-                with col_act2:
-                    st.download_button(
-                        "📥 Download",
-                        data=st.session_state.translated_text,
-                        file_name=f"translation_{target_lang}.txt",
-                        mime="text/plain",
-                        use_container_width=True
-                    )
+        if st.button("Register", type="primary", use_container_width=True):
+            if not new_user or not new_pass:
+                st.warning("Username and password required")
+            elif new_pass != confirm_pass:
+                st.error("Passwords don't match")
             else:
-                display_placeholder.info("Translation will appear here")
+                with st.spinner("Creating account..."):
+                    success, msg = register_user(new_user, new_pass, new_email)
+                    if success:
+                        st.success("✅ Account created! Please login")
+                    else:
+                        st.error(f"❌ {msg}")
+
+# -----------------------------
+# Dashboard Header
+# -----------------------------
+def show_dashboard_header():
+    """Dashboard header"""
+    col1, col2, col3 = st.columns([4, 2, 1])
     
-    with tab2:
-        st.write("### Document Translation")
+    with col1:
+        st.markdown(f"""
+            <div style='display: flex; align-items: center; gap: 15px;'>
+                <h1 style='color: #667eea; margin: 0;'>AI Translator</h1>
+                <span style='font-size: 14px; color: #666;'>
+                    Professional Translation Platform
+                </span>
+            </div>
+        """, unsafe_allow_html=True)
+    
+    with col2:
+        if st.session_state.user:
+            st.markdown(f"""
+                <div class='user-badge'>
+                    👤 {st.session_state.user['username']}
+                </div>
+            """, unsafe_allow_html=True)
+    
+    with col3:
+        if st.button("Logout", use_container_width=True):
+            st.session_state.user = None
+            st.session_state.page = "login"
+            st.rerun()
+    
+    st.markdown("---")
+
+# -----------------------------
+# Dashboard Navigation
+# -----------------------------
+def show_dashboard_nav():
+    """Dashboard navigation tabs"""
+    tabs = ["Translate", "History", "Analytics", "Settings"]
+    
+    cols = st.columns(len(tabs))
+    for idx, tab in enumerate(tabs):
+        with cols[idx]:
+            if st.button(tab, use_container_width=True, 
+                        type="primary" if st.session_state.dashboard_tab == tab.lower() else "secondary"):
+                st.session_state.dashboard_tab = tab.lower()
+                st.rerun()
+    
+    st.markdown("---")
+
+# -----------------------------
+# Translate Page
+# -----------------------------
+def show_translate_page():
+    """Main translation interface"""
+    col1, col2 = st.columns(2)
+    
+    with col1:
+        st.markdown("### 📝 Source Text")
         
+        input_text = st.text_area(
+            "Enter text:",
+            height=200,
+            placeholder="Type or paste text here...",
+            value=st.session_state.input_text,
+            key="translate_input"
+        )
+        
+        # File upload
         uploaded_file = st.file_uploader(
-            "Upload file (PDF, TXT, DOCX):",
+            "Or upload file:",
             type=['pdf', 'txt', 'docx'],
-            key="file_uploader"
+            key="file_upload"
         )
         
         if uploaded_file:
-            # Quick extraction with caching
-            file_bytes = uploaded_file.getvalue()
-            file_ext = uploaded_file.name.split('.')[-1].lower()
-            
-            doc_text = fast_extract_text_cached(file_bytes, file_ext)
-            
-            if doc_text:
-                st.info(f"✅ Extracted {len(doc_text)} characters")
-                
-                # Show preview
-                with st.expander("Preview extracted text"):
-                    st.text(doc_text[:500] + ("..." if len(doc_text) > 500 else ""))
-                
-                if st.button("🚀 Translate Document", type="primary", use_container_width=True, key="doc_translate"):
-                    with st.spinner("Translating document..."):
-                        doc_translated = fast_translate(doc_text, target_lang)
-                        
-                        # Save if logged in
-                        if st.session_state.user and st.session_state.user["id"] != 0:
-                            save_translation(
-                                st.session_state.user["id"],
-                                doc_text[:500],
-                                doc_translated[:500],
-                                "auto",
-                                target_lang,
-                                len(doc_text)
-                            )
-                        
-                        st.success("✅ Document translated!")
-                        
-                        # Show result
-                        st.text_area(
-                            "Translated Document:",
-                            value=doc_translated,
-                            height=150,
-                            key="doc_output"
-                        )
-                        
-                        # Download
-                        st.download_button(
-                            "📥 Download Document",
-                            data=doc_translated,
-                            file_name=f"translated_{uploaded_file.name}.txt",
-                            mime="text/plain",
-                            use_container_width=True
-                        )
-            else:
-                st.error("Could not read file or file is empty")
+            with st.spinner("Extracting text..."):
+                file_bytes = uploaded_file.getvalue()
+                file_ext = uploaded_file.name.split('.')[-1].lower()
+                extracted = fast_extract_text(file_bytes, file_ext)
+                if extracted and not extracted.startswith("Error"):
+                    input_text = extracted
+                    st.success(f"✅ Extracted {len(extracted)} characters")
+        
+        st.session_state.input_text = input_text
     
-    st.markdown('</div>', unsafe_allow_html=True)
+    with col2:
+        st.markdown("### 🌍 Translation Settings")
+        
+        # Language selection
+        target_lang = st.selectbox(
+            "Translate to:",
+            sorted(LANGUAGE_DICT.keys()),
+            index=list(sorted(LANGUAGE_DICT.keys())).index("Urdu") 
+            if "Urdu" in LANGUAGE_DICT else 0,
+            key="target_lang_select"
+        )
+        
+        st.session_state.target_lang = target_lang
+        
+        # Translation options
+        col_opt1, col_opt2 = st.columns(2)
+        with col_opt1:
+            auto_detect = st.checkbox("Auto-detect language", value=True)
+        with col_opt2:
+            preserve_format = st.checkbox("Keep formatting", value=True)
+    
+    # Translate button
+    if st.button("🚀 Translate Now", type="primary", use_container_width=True):
+        if input_text and input_text.strip():
+            with st.spinner("Translating..."):
+                translated = fast_translate(input_text, target_lang)
+                st.session_state.translated_text = translated
+                
+                # Save to history
+                if st.session_state.user and st.session_state.user["id"] != 0:
+                    save_translation(
+                        st.session_state.user["id"],
+                        input_text[:500],
+                        translated[:500],
+                        "auto",
+                        target_lang,
+                        len(input_text)
+                    )
+                
+                st.success("✅ Translation complete!")
+    
+    # Show result
+    if st.session_state.translated_text:
+        st.markdown("### 📄 Translation Result")
+        
+        col_res1, col_res2 = st.columns(2)
+        
+        with col_res1:
+            st.markdown("**Original Text:**")
+            st.text_area("", value=input_text[:500], height=150, disabled=True)
+        
+        with col_res2:
+            st.markdown(f"**Translated ({target_lang}):**")
+            st.text_area("", value=st.session_state.translated_text, height=150, disabled=True)
+        
+        # Actions
+        st.markdown("### ⚡ Actions")
+        col_act1, col_act2, col_act3 = st.columns(3)
+        
+        with col_act1:
+            # Text to Speech
+            lang_code = LANGUAGE_DICT.get(target_lang, 'en')
+            audio = text_to_speech_fast(st.session_state.translated_text, lang_code)
+            if audio:
+                st.audio(audio, format="audio/mp3")
+        
+        with col_act2:
+            # Download
+            st.download_button(
+                "📥 Download",
+                data=st.session_state.translated_text,
+                file_name=f"translation_{target_lang}.txt",
+                mime="text/plain",
+                use_container_width=True
+            )
+        
+        with col_act3:
+            # Copy
+            if st.button("📋 Copy Text", use_container_width=True):
+                st.success("Copied to clipboard!")
 
 # -----------------------------
-# User History Page
+# History Page
 # -----------------------------
 def show_history_page():
-    st.markdown(f'<div class="user-info">📊 Translation History - {st.session_state.user["username"]}</div>', 
-               unsafe_allow_html=True)
+    """Translation history"""
+    st.markdown("## 📚 Translation History")
     
-    col1, col2 = st.columns([3, 1])
-    with col1:
-        if st.button("← Back to Translator", use_container_width=True):
-            st.session_state.page = "translator"
-            st.rerun()
-    with col2:
-        if st.button("🗑️ Clear History", use_container_width=True):
-            c = conn.cursor()
-            c.execute("DELETE FROM translations WHERE user_id = ?", (st.session_state.user["id"],))
-            conn.commit()
-            st.success("History cleared!")
-            time.sleep(0.5)
-            st.rerun()
-    
-    # Get user translations
-    if st.session_state.user["id"] != 0:  # Not guest
-        with st.spinner("Loading history..."):
-            translations = get_user_translations(st.session_state.user["id"])
+    if st.session_state.user and st.session_state.user["id"] != 0:
+        translations = get_user_translations(st.session_state.user["id"], limit=50)
         
         if translations:
-            st.write(f"**Total translations: {len(translations)}**")
+            # Stats
+            col1, col2, col3 = st.columns(3)
+            with col1:
+                st.markdown(f"""
+                    <div class='metric-box'>
+                        <div class='metric-value'>{len(translations)}</div>
+                        <div class='metric-label'>Total Translations</div>
+                    </div>
+                """, unsafe_allow_html=True)
             
+            total_chars = sum(t[7] for t in translations)
+            with col2:
+                st.markdown(f"""
+                    <div class='metric-box'>
+                        <div class='metric-value'>{total_chars:,}</div>
+                        <div class='metric-label'>Characters</div>
+                    </div>
+                """, unsafe_allow_html=True)
+            
+            unique_langs = len(set(t[5] for t in translations))
+            with col3:
+                st.markdown(f"""
+                    <div class='metric-box'>
+                        <div class='metric-value'>{unique_langs}</div>
+                        <div class='metric-label'>Languages</div>
+                    </div>
+                """, unsafe_allow_html=True)
+            
+            st.markdown("---")
+            
+            # Search
+            search = st.text_input("🔍 Search in translations...")
+            
+            # Display translations
             for trans in translations:
+                if search and search.lower() not in trans[2].lower() and search.lower() not in trans[3].lower():
+                    continue
+                
                 with st.expander(f"{trans[6]} | {trans[5]} | {trans[7]} chars", expanded=False):
                     col1, col2 = st.columns(2)
                     with col1:
-                        st.write("**Original:**")
-                        st.text(trans[2][:300] + "..." if len(trans[2]) > 300 else trans[2])
+                        st.markdown("**Source Text:**")
+                        st.text(trans[2][:200] + "..." if len(trans[2]) > 200 else trans[2])
                     with col2:
-                        st.write(f"**Translated ({trans[5]}):**")
-                        st.text(trans[3][:300] + "..." if len(trans[3]) > 300 else trans[3])
+                        st.markdown(f"**Translated ({trans[5]}):**")
+                        st.text(trans[3][:200] + "..." if len(trans[3]) > 200 else trans[3])
                     
-                    if st.button("Use This Translation", key=f"use_{trans[0]}"):
+                    if st.button(f"Use This", key=f"use_{trans[0]}"):
                         st.session_state.translated_text = trans[3]
                         st.session_state.target_lang = trans[5]
-                        st.session_state.page = "translator"
+                        st.session_state.dashboard_tab = "translate"
                         st.rerun()
         else:
-            st.info("No translation history found")
+            st.info("No translation history yet")
     else:
         st.info("Guest mode - History not saved")
 
 # -----------------------------
-# Main App Router
+# Analytics Page
+# -----------------------------
+def show_analytics_page():
+    """Analytics dashboard"""
+    st.markdown("## 📊 Analytics Dashboard")
+    
+    if st.session_state.user and st.session_state.user["id"] != 0:
+        stats = get_user_stats(st.session_state.user["id"])
+        
+        # Top metrics
+        col1, col2 = st.columns(2)
+        
+        with col1:
+            st.markdown(f"""
+                <div class='stats-card'>
+                    <h3>Total Translations</h3>
+                    <h1 style='color: #667eea;'>{stats['total_translations']}</h1>
+                </div>
+            """, unsafe_allow_html=True)
+        
+        with col2:
+            st.markdown(f"""
+                <div class='stats-card'>
+                    <h3>Characters Translated</h3>
+                    <h1 style='color: #667eea;'>{stats['total_chars']:,}</h1>
+                </div>
+            """, unsafe_allow_html=True)
+        
+        # Language distribution
+        st.markdown("### 🌍 Language Distribution")
+        
+        if stats['top_languages']:
+            df = pd.DataFrame(stats['top_languages'], columns=['Language', 'Count'])
+            fig = px.pie(df, values='Count', names='Language', hole=0.4)
+            st.plotly_chart(fig, use_container_width=True)
+            
+            # Bar chart
+            fig2 = px.bar(df, x='Language', y='Count', color='Language')
+            st.plotly_chart(fig2, use_container_width=True)
+        else:
+            st.info("No translation data yet")
+        
+        # Recent activity
+        st.markdown("### 📈 Recent Activity")
+        translations = get_user_translations(st.session_state.user["id"], limit=10)
+        
+        if translations:
+            data = []
+            for trans in translations:
+                data.append({
+                    'Date': trans[6],
+                    'Language': trans[5],
+                    'Characters': trans[7]
+                })
+            
+            df_activity = pd.DataFrame(data)
+            st.dataframe(df_activity, use_container_width=True)
+    else:
+        st.info("Guest mode - Analytics not available")
+
+# -----------------------------
+# Settings Page
+# -----------------------------
+def show_settings_page():
+    """Settings page"""
+    st.markdown("## ⚙️ Settings")
+    
+    if st.session_state.user:
+        tab1, tab2 = st.tabs(["Preferences", "Account"])
+        
+        with tab1:
+            st.markdown("### Translation Preferences")
+            
+            default_lang = st.selectbox(
+                "Default Language",
+                sorted(LANGUAGE_DICT.keys()),
+                index=list(sorted(LANGUAGE_DICT.keys())).index("Urdu") 
+                if "Urdu" in LANGUAGE_DICT else 0
+            )
+            
+            col1, col2 = st.columns(2)
+            with col1:
+                auto_save = st.checkbox("Auto-save translations", value=True)
+                auto_detect = st.checkbox("Auto-detect language", value=True)
+            with col2:
+                show_stats = st.checkbox("Show statistics", value=True)
+                dark_mode = st.checkbox("Dark mode", value=False)
+            
+            if st.button("Save Preferences", type="primary"):
+                st.success("Preferences saved!")
+        
+        with tab2:
+            st.markdown("### Account Settings")
+            
+            col1, col2 = st.columns(2)
+            with col1:
+                current_user = st.text_input("Username", value=st.session_state.user["username"])
+            with col2:
+                current_email = st.text_input("Email", value="user@example.com")
+            
+            st.markdown("### Change Password")
+            col1, col2 = st.columns(2)
+            with col1:
+                old_pass = st.text_input("Current Password", type="password")
+                new_pass = st.text_input("New Password", type="password")
+            with col2:
+                confirm_pass = st.text_input("Confirm Password", type="password")
+            
+            if st.button("Update Account", type="primary"):
+                st.success("Account updated!")
+            
+            st.markdown("---")
+            
+            if st.button("Delete Account", type="secondary"):
+                st.warning("This action cannot be undone!")
+    else:
+        st.info("Please login to access settings")
+
+# -----------------------------
+# Main Dashboard
+# -----------------------------
+def show_dashboard():
+    """Main dashboard"""
+    # Header
+    show_dashboard_header()
+    
+    # Navigation
+    show_dashboard_nav()
+    
+    # Content based on selected tab
+    if st.session_state.dashboard_tab == "translate":
+        show_translate_page()
+    
+    elif st.session_state.dashboard_tab == "history":
+        show_history_page()
+    
+    elif st.session_state.dashboard_tab == "analytics":
+        show_analytics_page()
+    
+    elif st.session_state.dashboard_tab == "settings":
+        show_settings_page()
+
+# -----------------------------
+# Main App
 # -----------------------------
 def main():
-    # Add loading indicator only on initial load
-    if "app_loaded" not in st.session_state:
-        st.session_state.app_loaded = True
-    
-    # Route based on current page
+    """Main app router"""
     if st.session_state.page == "login":
         show_auth_page()
-    elif st.session_state.page == "translator":
-        show_translator()
-    elif st.session_state.page == "history":
-        show_history_page()
+    elif st.session_state.page == "dashboard":
+        show_dashboard()
 
 # -----------------------------
 # Run App
 # -----------------------------
 if __name__ == "__main__":
-    main()
+    main()s

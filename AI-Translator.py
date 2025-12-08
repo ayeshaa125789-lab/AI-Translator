@@ -121,7 +121,8 @@ st.set_page_config(
 st.markdown("""
 <style>
     /* Hide Streamlit elements */
-    .css-1lsmgbg { display: none; }
+    #MainMenu {visibility: hidden;}
+    footer {visibility: hidden;}
     .stDeployButton { display: none; }
     
     /* Fast loading */
@@ -180,6 +181,11 @@ st.markdown("""
         margin: 10px 0;
         font-weight: 600;
     }
+    
+    /* Prevent unnecessary reruns */
+    .stSelectbox label {
+        font-weight: 600;
+    }
 </style>
 """, unsafe_allow_html=True)
 
@@ -194,64 +200,76 @@ if "translated_text" not in st.session_state:
     st.session_state.translated_text = ""
 if "target_lang" not in st.session_state:
     st.session_state.target_lang = "Urdu"
-if "is_translating" not in st.session_state:
-    st.session_state.is_translating = False
+if "input_text_cache" not in st.session_state:
+    st.session_state.input_text_cache = ""
+if "last_translation" not in st.session_state:
+    st.session_state.last_translation = ""
 
 # -----------------------------
-# Translation Cache for Speed
+# Complete Language List (FIXED - Won't change on rerun)
+# -----------------------------
+@st.cache_data(ttl=3600)  # Cache for 1 hour
+def get_languages():
+    """Fixed language list that won't change on rerun"""
+    return {
+        'English': 'en', 'Urdu': 'ur', 'Hindi': 'hi', 'Arabic': 'ar',
+        'Spanish': 'es', 'French': 'fr', 'German': 'de', 'Chinese': 'zh-CN',
+        'Japanese': 'ja', 'Korean': 'ko', 'Russian': 'ru', 'Portuguese': 'pt',
+        'Italian': 'it', 'Turkish': 'tr', 'Persian': 'fa', 'Bengali': 'bn',
+        'Punjabi': 'pa', 'Marathi': 'mr', 'Gujarati': 'gu', 'Tamil': 'ta',
+        'Telugu': 'te', 'Kannada': 'kn', 'Malayalam': 'ml', 'Thai': 'th',
+        'Vietnamese': 'vi', 'Indonesian': 'id', 'Dutch': 'nl', 'Greek': 'el',
+        'Hebrew': 'he', 'Polish': 'pl', 'Ukrainian': 'uk', 'Romanian': 'ro'
+    }
+
+LANGUAGES = get_languages()
+
+# -----------------------------
+# Fast Functions with better caching
 # -----------------------------
 _translation_cache = {}
 
-# -----------------------------
-# Complete Language List
-# -----------------------------
-LANGUAGES = {
-    'English': 'en', 'Urdu': 'ur', 'Hindi': 'hi', 'Arabic': 'ar',
-    'Spanish': 'es', 'French': 'fr', 'German': 'de', 'Chinese': 'zh-CN',
-    'Japanese': 'ja', 'Korean': 'ko', 'Russian': 'ru', 'Portuguese': 'pt',
-    'Italian': 'it', 'Turkish': 'tr', 'Persian': 'fa', 'Bengali': 'bn',
-    'Punjabi': 'pa', 'Marathi': 'mr', 'Gujarati': 'gu', 'Tamil': 'ta',
-    'Telugu': 'te', 'Kannada': 'kn', 'Malayalam': 'ml', 'Thai': 'th',
-    'Vietnamese': 'vi', 'Indonesian': 'id', 'Dutch': 'nl', 'Greek': 'el',
-    'Hebrew': 'he', 'Polish': 'pl', 'Ukrainian': 'uk', 'Romanian': 'ro'
-}
-
-# -----------------------------
-# Fast Functions
-# -----------------------------
-def fast_translate(text, target_lang):
-    """Fast translation with caching"""
-    cache_key = f"{text[:100]}_{target_lang}"
-    if cache_key in _translation_cache:
-        return _translation_cache[cache_key]
-    
+@st.cache_data(ttl=300)  # Cache translations for 5 minutes
+def fast_translate_cached(text, target_lang_code):
+    """Fast translation with Streamlit caching"""
     try:
-        translator = GoogleTranslator(target=target_lang)
+        translator = GoogleTranslator(target=target_lang_code)
         result = translator.translate(text)
-        _translation_cache[cache_key] = result
         return result
     except Exception as e:
-        return f"Error: {str(e)[:50]}"
+        return f"Translation error: {str(e)[:50]}"
 
-def fast_extract_text(file):
-    """Fast text extraction"""
+def fast_translate(text, target_lang_name):
+    """Wrapper function to use cached translation"""
+    if not text.strip():
+        return ""
+    
+    target_lang_code = LANGUAGES.get(target_lang_name, 'en')
+    return fast_translate_cached(text[:5000], target_lang_code)  # Limit text length
+
+@st.cache_data(ttl=600)
+def fast_extract_text_cached(file_bytes, file_type):
+    """Cached text extraction"""
     try:
-        if file.name.endswith('.pdf'):
-            with pdfplumber.open(file) as pdf:
-                return " ".join([page.extract_text() or "" for page in pdf.pages[:3]])
-        elif file.name.endswith('.txt'):
-            return file.read().decode('utf-8')[:5000]
-        elif file.name.endswith('.docx'):
-            doc = Document(file)
-            return "\n".join([para.text for para in doc.paragraphs[:50]])
+        from io import BytesIO
+        
+        if file_type == 'pdf':
+            with pdfplumber.open(BytesIO(file_bytes)) as pdf:
+                return " ".join([page.extract_text() or "" for page in pdf.pages[:5]])
+        elif file_type == 'txt':
+            return file_bytes.decode('utf-8')[:10000]
+        elif file_type == 'docx':
+            from docx import Document
+            doc = Document(BytesIO(file_bytes))
+            return "\n".join([para.text for para in doc.paragraphs[:100]])
         return ""
-    except:
-        return ""
+    except Exception as e:
+        return f"Error reading file: {str(e)[:50]}"
 
 def text_to_speech_fast(text, lang_code):
     """Fast audio generation"""
     try:
-        tts = gTTS(text=text[:500], lang=lang_code)  # Limit for speed
+        tts = gTTS(text=text[:500], lang=lang_code, slow=False)
         audio_bytes = BytesIO()
         tts.write_to_fp(audio_bytes)
         audio_bytes.seek(0)
@@ -277,15 +295,16 @@ def show_auth_page():
         with col1:
             if st.button("Login", use_container_width=True, type="primary"):
                 if username and password:
-                    success, user = authenticate_user(username, password)
-                    if success:
-                        st.session_state.user = {"id": user[0], "username": user[1]}
-                        st.session_state.page = "translator"
-                        st.success("Login successful!")
-                        time.sleep(0.5)
-                        st.rerun()
-                    else:
-                        st.error("Invalid username or password")
+                    with st.spinner("Authenticating..."):
+                        success, user = authenticate_user(username, password)
+                        if success:
+                            st.session_state.user = {"id": user[0], "username": user[1]}
+                            st.session_state.page = "translator"
+                            st.success("Login successful!")
+                            time.sleep(0.3)
+                            st.rerun()
+                        else:
+                            st.error("Invalid username or password")
                 else:
                     st.warning("Please enter username and password")
         
@@ -294,7 +313,7 @@ def show_auth_page():
                 st.session_state.user = {"id": 0, "username": "Guest"}
                 st.session_state.page = "translator"
                 st.info("Entering guest mode...")
-                time.sleep(0.5)
+                time.sleep(0.3)
                 st.rerun()
     
     with tab2:
@@ -311,12 +330,13 @@ def show_auth_page():
             elif new_password != confirm_password:
                 st.error("Passwords do not match")
             else:
-                success, message = register_user(new_username, new_password, new_email)
-                if success:
-                    st.success(message)
-                    st.info("Please login with your new account")
-                else:
-                    st.error(message)
+                with st.spinner("Creating account..."):
+                    success, message = register_user(new_username, new_password, new_email)
+                    if success:
+                        st.success(message)
+                        st.info("Please login with your new account")
+                    else:
+                        st.error(message)
     
     st.markdown('</div>', unsafe_allow_html=True)
 
@@ -324,11 +344,12 @@ def show_auth_page():
 # Fast Translator Interface
 # -----------------------------
 def show_translator():
-    # User Info Bar
+    # User Info Bar - Fixed position
     if st.session_state.user:
         col1, col2, col3 = st.columns([3, 1, 1])
         with col1:
-            st.markdown(f'<div class="user-info">👤 {st.session_state.user["username"]} | AI Translator Pro</div>', unsafe_allow_html=True)
+            st.markdown(f'<div class="user-info">👤 {st.session_state.user["username"]} | AI Translator Pro</div>', 
+                       unsafe_allow_html=True)
         with col2:
             if st.button("📊 My History", use_container_width=True):
                 st.session_state.page = "history"
@@ -342,53 +363,77 @@ def show_translator():
     # Main Translator
     st.markdown('<div class="main-container">', unsafe_allow_html=True)
     
-    # Language Selection
+    # Language Selection - FIXED: Using session state to preserve selection
     col1, col2 = st.columns([3, 1])
     with col1:
+        # Get language names list from cached function
+        lang_names = list(LANGUAGES.keys())
+        
+        # Find current index in session state
+        current_lang = st.session_state.target_lang
+        current_index = lang_names.index(current_lang) if current_lang in lang_names else 0
+        
+        # Selectbox with preserved value
         target_lang = st.selectbox(
             "Translate to:",
-            list(LANGUAGES.keys()),
-            index=list(LANGUAGES.keys()).index(st.session_state.target_lang),
-            key="target_lang"
+            lang_names,
+            index=current_index,
+            key="target_lang_select"
         )
+        
+        # Update session state
         st.session_state.target_lang = target_lang
     
     with col2:
-        if st.button("🔄 Clear", use_container_width=True):
+        if st.button("🔄 Clear All", use_container_width=True):
             st.session_state.translated_text = ""
+            st.session_state.input_text_cache = ""
+            st.session_state.last_translation = ""
             st.rerun()
     
     # Fast Tabs
-    tab1, tab2 = st.tabs(["📝 Quick Translate", "📁 Document"])
+    tab1, tab2 = st.tabs(["📝 Quick Translate", "📁 Document Translate"])
     
     with tab1:
         col_left, col_right = st.columns(2)
         
         with col_left:
+            # Use session state to preserve input text
             input_text = st.text_area(
                 "Enter text:",
                 height=200,
                 placeholder="Type or paste here...",
-                key="input_text"
+                value=st.session_state.input_text_cache,
+                key="input_text_area"
             )
+            
+            # Update cache
+            st.session_state.input_text_cache = input_text
             
             translate_now = st.button(
                 "🚀 Translate Now", 
                 type="primary", 
                 use_container_width=True,
-                disabled=not input_text.strip()
+                disabled=not input_text.strip(),
+                key="translate_button"
             )
         
         with col_right:
+            # Display area for translation
+            display_placeholder = st.empty()
+            
             # Handle translation
             if translate_now and input_text.strip():
-                # Show loading
                 with st.spinner("Translating..."):
                     # Fast translation
-                    translated = fast_translate(input_text, LANGUAGES[target_lang])
+                    translated = fast_translate(input_text, target_lang)
+                    
+                    # Update session state
+                    st.session_state.translated_text = translated
+                    st.session_state.last_translation = translated
                     
                     # Save to user history
-                    if st.session_state.user and st.session_state.user["id"] != 0:  # Not guest
+                    if st.session_state.user and st.session_state.user["id"] != 0:
                         save_translation(
                             st.session_state.user["id"],
                             input_text[:1000],
@@ -397,24 +442,23 @@ def show_translator():
                             target_lang,
                             len(input_text)
                         )
-                    
-                    # Update state
-                    st.session_state.translated_text = translated
-                    st.success("✅ Translation complete!")
             
-            # Display result
+            # Always show the current translation from session state
             if st.session_state.translated_text:
-                st.text_area(
+                display_placeholder.text_area(
                     f"Translated ({target_lang}):",
                     value=st.session_state.translated_text,
                     height=200,
-                    key="output_text"
+                    key="output_text_area"
                 )
                 
                 # Actions
                 col_act1, col_act2 = st.columns(2)
                 with col_act1:
-                    audio = text_to_speech_fast(st.session_state.translated_text, LANGUAGES[target_lang])
+                    audio = text_to_speech_fast(
+                        st.session_state.translated_text, 
+                        LANGUAGES.get(target_lang, 'en')
+                    )
                     if audio:
                         st.audio(audio, format="audio/mp3")
                 
@@ -427,26 +471,34 @@ def show_translator():
                         use_container_width=True
                     )
             else:
-                st.info("Translation will appear here")
+                display_placeholder.info("Translation will appear here")
     
     with tab2:
         st.write("### Document Translation")
         
         uploaded_file = st.file_uploader(
             "Upload file (PDF, TXT, DOCX):",
-            type=['pdf', 'txt', 'docx']
+            type=['pdf', 'txt', 'docx'],
+            key="file_uploader"
         )
         
         if uploaded_file:
-            # Quick extraction
-            doc_text = fast_extract_text(uploaded_file)
+            # Quick extraction with caching
+            file_bytes = uploaded_file.getvalue()
+            file_ext = uploaded_file.name.split('.')[-1].lower()
+            
+            doc_text = fast_extract_text_cached(file_bytes, file_ext)
             
             if doc_text:
-                st.info(f"✅ Ready to translate ({len(doc_text)} chars)")
+                st.info(f"✅ Extracted {len(doc_text)} characters")
                 
-                if st.button("🚀 Translate Document", type="primary", use_container_width=True):
+                # Show preview
+                with st.expander("Preview extracted text"):
+                    st.text(doc_text[:500] + ("..." if len(doc_text) > 500 else ""))
+                
+                if st.button("🚀 Translate Document", type="primary", use_container_width=True, key="doc_translate"):
                     with st.spinner("Translating document..."):
-                        doc_translated = fast_translate(doc_text, LANGUAGES[target_lang])
+                        doc_translated = fast_translate(doc_text, target_lang)
                         
                         # Save if logged in
                         if st.session_state.user and st.session_state.user["id"] != 0:
@@ -465,7 +517,8 @@ def show_translator():
                         st.text_area(
                             "Translated Document:",
                             value=doc_translated,
-                            height=150
+                            height=150,
+                            key="doc_output"
                         )
                         
                         # Download
@@ -477,7 +530,7 @@ def show_translator():
                             use_container_width=True
                         )
             else:
-                st.error("Could not read file")
+                st.error("Could not read file or file is empty")
     
     st.markdown('</div>', unsafe_allow_html=True)
 
@@ -485,7 +538,8 @@ def show_translator():
 # User History Page
 # -----------------------------
 def show_history_page():
-    st.markdown(f'<div class="user-info">📊 Translation History - {st.session_state.user["username"]}</div>', unsafe_allow_html=True)
+    st.markdown(f'<div class="user-info">📊 Translation History - {st.session_state.user["username"]}</div>', 
+               unsafe_allow_html=True)
     
     col1, col2 = st.columns([3, 1])
     with col1:
@@ -503,20 +557,23 @@ def show_history_page():
     
     # Get user translations
     if st.session_state.user["id"] != 0:  # Not guest
-        translations = get_user_translations(st.session_state.user["id"])
+        with st.spinner("Loading history..."):
+            translations = get_user_translations(st.session_state.user["id"])
         
         if translations:
+            st.write(f"**Total translations: {len(translations)}**")
+            
             for trans in translations:
-                with st.expander(f"{trans[6]} | {trans[5]} | {trans[7]} chars"):
+                with st.expander(f"{trans[6]} | {trans[5]} | {trans[7]} chars", expanded=False):
                     col1, col2 = st.columns(2)
                     with col1:
                         st.write("**Original:**")
-                        st.write(trans[2][:200] + "..." if len(trans[2]) > 200 else trans[2])
+                        st.text(trans[2][:300] + "..." if len(trans[2]) > 300 else trans[2])
                     with col2:
                         st.write(f"**Translated ({trans[5]}):**")
-                        st.write(trans[3][:200] + "..." if len(trans[3]) > 200 else trans[3])
+                        st.text(trans[3][:300] + "..." if len(trans[3]) > 300 else trans[3])
                     
-                    if st.button("Use This", key=f"use_{trans[0]}"):
+                    if st.button("Use This Translation", key=f"use_{trans[0]}"):
                         st.session_state.translated_text = trans[3]
                         st.session_state.target_lang = trans[5]
                         st.session_state.page = "translator"
@@ -530,6 +587,10 @@ def show_history_page():
 # Main App Router
 # -----------------------------
 def main():
+    # Add loading indicator only on initial load
+    if "app_loaded" not in st.session_state:
+        st.session_state.app_loaded = True
+    
     # Route based on current page
     if st.session_state.page == "login":
         show_auth_page()

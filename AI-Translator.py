@@ -596,7 +596,7 @@ def show_translator():
     st.markdown('<h1 class="main-header">🌐 AI Translator & Text-to-Speech</h1>', unsafe_allow_html=True)
     st.caption("Professional Translation & Speech Synthesis with 100+ Languages")
     
-    # Language Selection - Main section only
+    # Language Selection - ONLY in main section (sidebar से हटा दिया)
     st.markdown('<div class="language-select">', unsafe_allow_html=True)
     st.markdown("### 🎯 Select Target Language")
     target_lang = st.selectbox(
@@ -859,7 +859,7 @@ def text_to_speech(text, lang_code):
         return None
 
 # -----------------------------
-# Sidebar - UPDATED
+# Sidebar - UPDATED (Language selection हटा दिया)
 # -----------------------------
 def show_sidebar():
     with st.sidebar:
@@ -930,18 +930,36 @@ def show_sidebar():
         
         st.markdown("---")
         
-        # Quick TTS
+        # Popular Languages Info (Selection नहीं, केवल info)
+        st.markdown("### 🌍 Popular Languages")
+        
+        pop_langs_info = {
+            "🇺🇸 English": "en",
+            "🇮🇳 Hindi": "hi", 
+            "🇦🇪 Arabic": "ar",
+            "🇪🇸 Spanish": "es",
+            "🇵🇰 Urdu": "ur",
+            "🇦🇫 Pashto": "ps",
+            "🇫🇷 French": "fr",
+            "🇩🇪 German": "de"
+        }
+        
+        for lang_name, lang_code in pop_langs_info.items():
+            st.write(f"{lang_name} - `{lang_code}`")
+        
+        st.markdown("---")
+        
+        # Quick TTS (Limited functionality)
         st.markdown("### 🔊 Quick TTS")
-        tts_quick_text = st.text_input("Quick text for TTS:", placeholder="Enter text...")
+        tts_quick_text = st.text_input("Text for TTS:", placeholder="Enter text...", key="sidebar_tts_text")
         
         if tts_quick_text:
-            quick_tts_lang = st.selectbox("Language:", ["English", "Hindi", "Urdu", "Spanish"], key="quick_tts")
-            
-            if st.button("Generate Quick TTS", use_container_width=True):
-                audio_bytes, message = generate_tts_audio(tts_quick_text, LANGUAGES[quick_tts_lang], quick_tts_lang)
+            if st.button("Generate TTS", use_container_width=True):
+                # Use English as default for quick TTS
+                audio_bytes, message = generate_tts_audio(tts_quick_text, 'en', "English")
                 if audio_bytes:
                     st.audio(audio_bytes, format="audio/mp3")
-                    st.success("Quick TTS generated!")
+                    st.success("TTS generated!")
                 else:
                     st.error(message)
 

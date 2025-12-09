@@ -88,6 +88,20 @@ st.markdown("""
         text-align: center;
         padding: 20px;
     }
+    
+    /* Language selector custom styling */
+    .language-selector-container {
+        padding: 10px;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        border-radius: 10px;
+        margin-bottom: 20px;
+    }
+    
+    .language-selector-label {
+        color: white !important;
+        font-weight: 600 !important;
+        font-size: 1.1rem !important;
+    }
 </style>
 """, unsafe_allow_html=True)
 
@@ -183,7 +197,7 @@ LANGUAGES = {
     'Maltese': 'mt',
     'Maori': 'mi',
     'Marathi': 'mr',
-    'Mongolian': 'mn',
+    'Mongolian': 'mn',  # ADDED HERE
     'Myanmar (Burmese)': 'my',
     'Nepali': 'ne',
     'Norwegian': 'no',
@@ -273,6 +287,9 @@ if "show_success" not in st.session_state:
 if "is_translating" not in st.session_state:
     st.session_state.is_translating = False
 
+if "auto_speech" not in st.session_state:
+    st.session_state.auto_speech = True
+
 # -----------------------------
 # File Processing Functions
 # -----------------------------
@@ -354,13 +371,15 @@ def show_translator():
     st.markdown('<h1 class="main-header">🌐 AI Translator</h1>', unsafe_allow_html=True)
     st.caption("Professional Translation with 1000+ Languages")
     
-    # Language Selection
-    st.markdown('<div class="simple-card">', unsafe_allow_html=True)
+    # Language Selection on FRONT PAGE ONLY
+    st.markdown('<div class="language-selector-container">', unsafe_allow_html=True)
+    st.markdown('<p class="language-selector-label">Select Target Language:</p>', unsafe_allow_html=True)
     target_lang = st.selectbox(
-        "Translate to:",
+        "",
         list(LANGUAGES.keys()),
         index=list(LANGUAGES.keys()).index(st.session_state.target_lang),
-        key="target_lang"
+        key="target_lang_main",
+        label_visibility="collapsed"
     )
     st.markdown('</div>', unsafe_allow_html=True)
     
@@ -381,6 +400,12 @@ def show_translator():
             
             if input_text:
                 st.caption(f"Characters: {len(input_text)}")
+            
+            # Auto speech toggle
+            st.session_state.auto_speech = st.checkbox(
+                "🔊 Auto-play speech after translation", 
+                value=st.session_state.auto_speech
+            )
             
             # Translate button - FIXED LOGIC
             translate_clicked = st.button("Translate Now", use_container_width=True, type="primary")
@@ -441,28 +466,37 @@ def show_translator():
                         # Character count
                         st.caption(f"Characters: {len(translated_text)}")
                         
-                        # Audio and Download options
-                        st.markdown("---")
-                        
-                        col_audio, col_download = st.columns(2)
-                        with col_audio:
+                        # Automatic Text-to-Speech
+                        if st.session_state.auto_speech:
+                            st.markdown("---")
+                            st.write("**🔊 Audio Output:**")
                             audio_bytes = text_to_speech(translated_text, LANGUAGES[target_lang])
                             if audio_bytes:
                                 st.audio(audio_bytes, format="audio/mp3")
+                                st.download_button(
+                                    "Download Audio",
+                                    data=audio_bytes,
+                                    file_name=f"speech_{target_lang}.mp3",
+                                    mime="audio/mp3",
+                                    use_container_width=True
+                                )
                         
+                        # Download options
+                        st.markdown("---")
+                        col_download, col_clear = st.columns(2)
                         with col_download:
                             st.download_button(
-                                "Download Text",
+                                "📥 Download Text",
                                 data=translated_text,
                                 file_name=f"translation_{target_lang}.txt",
                                 mime="text/plain",
                                 use_container_width=True
                             )
                         
-                        # Clear button
-                        if st.button("Clear Translation", use_container_width=True):
-                            st.session_state.translated_text = ""
-                            st.rerun()
+                        with col_clear:
+                            if st.button("🗑️ Clear Translation", use_container_width=True):
+                                st.session_state.translated_text = ""
+                                st.rerun()
                         
                     except Exception as e:
                         st.session_state.is_translating = False
@@ -480,26 +514,36 @@ def show_translator():
                 
                 st.caption(f"Characters: {len(st.session_state.translated_text)}")
                 
-                st.markdown("---")
-                
-                col_audio, col_download = st.columns(2)
-                with col_audio:
+                # Automatic Text-to-Speech for existing translation
+                if st.session_state.auto_speech:
+                    st.markdown("---")
+                    st.write("**🔊 Audio Output:**")
                     audio_bytes = text_to_speech(st.session_state.translated_text, LANGUAGES[target_lang])
                     if audio_bytes:
                         st.audio(audio_bytes, format="audio/mp3")
+                        st.download_button(
+                            "Download Audio",
+                            data=audio_bytes,
+                            file_name=f"speech_{target_lang}.mp3",
+                            mime="audio/mp3",
+                            use_container_width=True
+                        )
                 
+                st.markdown("---")
+                col_download, col_clear = st.columns(2)
                 with col_download:
                     st.download_button(
-                        "Download Text",
+                        "📥 Download Text",
                         data=st.session_state.translated_text,
                         file_name=f"translation_{target_lang}.txt",
                         mime="text/plain",
                         use_container_width=True
                     )
                 
-                if st.button("Clear Translation", use_container_width=True):
-                    st.session_state.translated_text = ""
-                    st.rerun()
+                with col_clear:
+                    if st.button("🗑️ Clear Translation", use_container_width=True):
+                        st.session_state.translated_text = ""
+                        st.rerun()
             
             else:
                 st.info("✨ **Translation will appear here**\n\n1. Enter text in the left box\n2. Click 'Translate Now' button")
@@ -517,6 +561,13 @@ def show_translator():
         
         if uploaded_file:
             st.success(f"File uploaded: {uploaded_file.name}")
+            
+            # Auto speech toggle for documents
+            auto_speech_doc = st.checkbox(
+                "🔊 Auto-generate speech for document translation", 
+                value=True,
+                key="auto_speech_doc"
+            )
             
             doc_translate_clicked = st.button("Translate Document", use_container_width=True, type="primary")
             
@@ -542,6 +593,14 @@ def show_translator():
                                 height=200
                             )
                             
+                            # Automatic speech for document
+                            if auto_speech_doc:
+                                st.markdown("---")
+                                st.write("**🔊 Document Audio:**")
+                                doc_audio = text_to_speech(translated_doc, LANGUAGES[target_lang])
+                                if doc_audio:
+                                    st.audio(doc_audio, format="audio/mp3")
+                            
                             # Download options
                             col1, col2 = st.columns(2)
                             with col1:
@@ -553,8 +612,7 @@ def show_translator():
                                     use_container_width=True
                                 )
                             with col2:
-                                doc_audio = text_to_speech(translated_doc, LANGUAGES[target_lang])
-                                if doc_audio:
+                                if auto_speech_doc and doc_audio:
                                     st.download_button(
                                         "Download Audio",
                                         data=doc_audio,
@@ -614,7 +672,7 @@ def show_translator():
         """, unsafe_allow_html=True)
 
 # -----------------------------
-# Sidebar
+# Sidebar WITHOUT language selection
 # -----------------------------
 def show_sidebar():
     with st.sidebar:
@@ -622,7 +680,7 @@ def show_sidebar():
         st.markdown("---")
         
         # Navigation
-        if st.button("Clear & Refresh", use_container_width=True):
+        if st.button("🔄 Clear & Refresh", use_container_width=True):
             st.session_state.translated_text = ""
             st.session_state.input_text = ""
             st.rerun()
@@ -637,24 +695,27 @@ def show_sidebar():
                     st.write(f"**To:** {entry['target']}")
                     st.write(f"**Chars:** {entry.get('characters', 0)}")
                     
-                    if st.button(f"Load", key=f"load_{i}"):
+                    if st.button(f"📝 Load", key=f"load_{i}"):
                         st.session_state.translated_text = entry['translated']
                         st.session_state.target_lang = entry['target']
                         st.rerun()
         
         # Clear history
         if st.session_state.translation_history:
-            if st.button("Clear All History", use_container_width=True):
+            if st.button("🗑️ Clear All History", use_container_width=True):
                 st.session_state.translation_history = []
                 st.rerun()
         
-        # Quick languages
-        st.write("#### 🌍 Quick Languages")
-        pop_langs = ['Urdu', 'English', 'Arabic', 'Hindi', 'Spanish']
-        selected = st.selectbox("Jump to:", pop_langs)A
-        if selected != st.session_state.target_lang:
-            st.session_state.target_lang = selected
-            st.rerun()
+        st.markdown("---")
+        st.write("#### ℹ️ Instructions:")
+        st.markdown("""
+        1. **Select language** from main page
+        2. **Enter text** or upload document
+        3. **Click Translate**
+        4. **Audio will auto-play** if enabled
+        
+        *Language selection is only available on main page*
+        """)
 
 # -----------------------------
 # Main App

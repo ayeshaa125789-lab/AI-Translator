@@ -15,7 +15,7 @@ import hashlib
 # App Configuration
 # -----------------------------
 st.set_page_config(
-    page_title="AI Translator",
+    page_title="AI Translator & TTS",
     page_icon="🌐",
     layout="wide",
     initial_sidebar_state="expanded"
@@ -57,6 +57,19 @@ st.markdown("""
         margin: 10px 0;
     }
     
+    .tts-area {
+        background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+        color: white;
+        padding: 20px;
+        border-radius: 8px;
+        margin: 10px 0;
+    }
+    
+    .tts-area h3 {
+        color: white !important;
+        margin-bottom: 15px;
+    }
+    
     .stat-box {
         background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
         color: white;
@@ -79,6 +92,22 @@ st.markdown("""
         color: rgba(255,255,255,0.9);
     }
     
+    .language-select {
+        background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+        color: white;
+        padding: 12px;
+        border-radius: 8px;
+        margin: 10px 0;
+        text-align: center;
+    }
+    
+    .audio-player {
+        background: #1e293b;
+        padding: 15px;
+        border-radius: 10px;
+        margin: 10px 0;
+    }
+    
     /* Hide Streamlit elements */
     .css-1lsmgbg { display: none; }
     .stDeployButton { display: none; }
@@ -88,115 +117,124 @@ st.markdown("""
         text-align: center;
         padding: 20px;
     }
+    
+    /* Tab styling */
+    .stTabs [data-baseweb="tab-list"] {
+        gap: 8px;
+    }
+    
+    .stTabs [data-baseweb="tab"] {
+        border-radius: 8px 8px 0px 0px;
+        padding: 10px 20px;
+        font-weight: 600;
+    }
 </style>
 """, unsafe_allow_html=True)
 
 # -----------------------------
-# Complete Language List (1000+ Languages)
+# Complete Language List (1000+ Languages) - UPDATED
 # -----------------------------
 LANGUAGES = {
-    'English': 'en', 
-    'Urdu': 'ur',
-    'Hindi': 'hi',
-    'Arabic': 'ar',
-    'Spanish': 'es', 
-    'French': 'fr', 
-    'German': 'de',
-    'Chinese (Simplified)': 'zh-CN',
-    'Chinese (Traditional)': 'zh-TW',
-    'Japanese': 'ja',
-    'Korean': 'ko',
-    'Russian': 'ru',
-    'Portuguese': 'pt',
-    'Italian': 'it',
-    'Dutch': 'nl',
-    'Greek': 'el',
-    'Hebrew': 'he',
-    'Turkish': 'tr',
-    'Polish': 'pl',
-    'Ukrainian': 'uk',
-    'Romanian': 'ro',
-    'Persian': 'fa',
-    'Bengali': 'bn',
-    'Punjabi': 'pa',
-    'Marathi': 'mr',
-    'Gujarati': 'gu',
-    'Tamil': 'ta',
-    'Telugu': 'te',
-    'Kannada': 'kn',
-    'Malayalam': 'ml',
-    'Sinhala': 'si',
-    'Thai': 'th',
-    'Vietnamese': 'vi',
-    'Indonesian': 'id',
-    'Malay': 'ms',
-    'Filipino': 'tl',
-    'Swahili': 'sw',
-    'Pashto': 'ps',
     'Afrikaans': 'af',
     'Albanian': 'sq',
     'Amharic': 'am',
+    'Arabic': 'ar',
     'Armenian': 'hy',
+    'Assamese': 'as',
+    'Aymara': 'ay',
     'Azerbaijani': 'az',
+    'Bambara': 'bm',
     'Basque': 'eu',
     'Belarusian': 'be',
+    'Bengali': 'bn',
+    'Bhojpuri': 'bho',
     'Bosnian': 'bs',
     'Bulgarian': 'bg',
     'Catalan': 'ca',
     'Cebuano': 'ceb',
-    'Chichewa': 'ny',
+    'Chinese (Simplified)': 'zh-CN',
+    'Chinese (Traditional)': 'zh-TW',
     'Corsican': 'co',
     'Croatian': 'hr',
     'Czech': 'cs',
     'Danish': 'da',
+    'Dhivehi': 'dv',
+    'Dogri': 'doi',
+    'Dutch': 'nl',
+    'English': 'en',
     'Esperanto': 'eo',
     'Estonian': 'et',
+    'Ewe': 'ee',
+    'Filipino (Tagalog)': 'tl',
     'Finnish': 'fi',
+    'French': 'fr',
     'Frisian': 'fy',
     'Galician': 'gl',
     'Georgian': 'ka',
+    'German': 'de',
+    'Greek': 'el',
+    'Guarani': 'gn',
     'Gujarati': 'gu',
     'Haitian Creole': 'ht',
     'Hausa': 'ha',
     'Hawaiian': 'haw',
+    'Hebrew': 'he',
+    'Hindi': 'hi',
     'Hmong': 'hmn',
     'Hungarian': 'hu',
     'Icelandic': 'is',
     'Igbo': 'ig',
+    'Ilocano': 'ilo',
+    'Indonesian': 'id',
     'Irish': 'ga',
+    'Italian': 'it',
+    'Japanese': 'ja',
     'Javanese': 'jw',
     'Kannada': 'kn',
     'Kazakh': 'kk',
     'Khmer': 'km',
     'Kinyarwanda': 'rw',
+    'Konkani': 'kok',
+    'Korean': 'ko',
+    'Krio': 'kri',
     'Kurdish (Kurmanji)': 'ku',
+    'Kurdish (Sorani)': 'ckb',
     'Kyrgyz': 'ky',
     'Lao': 'lo',
     'Latin': 'la',
     'Latvian': 'lv',
+    'Lingala': 'ln',
     'Lithuanian': 'lt',
+    'Luganda': 'lg',
     'Luxembourgish': 'lb',
     'Macedonian': 'mk',
+    'Maithili': 'mai',
     'Malagasy': 'mg',
     'Malay': 'ms',
     'Malayalam': 'ml',
     'Maltese': 'mt',
+    'Manipuri (Meiteilon)': 'mni',
     'Maori': 'mi',
     'Marathi': 'mr',
+    'Mizo': 'lus',
     'Mongolian': 'mn',
     'Myanmar (Burmese)': 'my',
     'Nepali': 'ne',
     'Norwegian': 'no',
     'Odia (Oriya)': 'or',
+    'Oromo': 'om',
     'Pashto': 'ps',
     'Persian': 'fa',
     'Polish': 'pl',
     'Portuguese': 'pt',
     'Punjabi': 'pa',
+    'Quechua': 'qu',
     'Romanian': 'ro',
     'Russian': 'ru',
     'Samoan': 'sm',
+    'Sanskrit': 'sa',
     'Scots Gaelic': 'gd',
+    'Sepedi': 'nso',
     'Serbian': 'sr',
     'Sesotho': 'st',
     'Shona': 'sn',
@@ -214,8 +252,11 @@ LANGUAGES = {
     'Tatar': 'tt',
     'Telugu': 'te',
     'Thai': 'th',
+    'Tigrinya': 'ti',
+    'Tsonga': 'ts',
     'Turkish': 'tr',
     'Turkmen': 'tk',
+    'Twi (Akan)': 'ak',
     'Ukrainian': 'uk',
     'Urdu': 'ur',
     'Uyghur': 'ug',
@@ -225,31 +266,7 @@ LANGUAGES = {
     'Xhosa': 'xh',
     'Yiddish': 'yi',
     'Yoruba': 'yo',
-    'Zulu': 'zu',
-    'Assamese': 'as',
-    'Aymara': 'ay',
-    'Bambara': 'bm',
-    'Bhojpuri': 'bho',
-    'Dhivehi': 'dv',
-    'Dogri': 'doi',
-    'Ewe': 'ee',
-    'Filipino': 'fil',
-    'Guarani': 'gn',
-    'Ilocano': 'ilo',
-    'Krio': 'kri',
-    'Kurdish (Sorani)': 'ckb',
-    'Lingala': 'ln',
-    'Luganda': 'lg',
-    'Maithili': 'mai',
-    'Meiteilon (Manipuri)': 'mni',
-    'Mizo': 'lus',
-    'Oromo': 'om',
-    'Quechua': 'qu',
-    'Sanskrit': 'sa',
-    'Sepedi': 'nso',
-    'Tigrinya': 'ti',
-    'Tsonga': 'ts',
-    'Twi': 'ak'
+    'Zulu': 'zu'
 }
 
 # -----------------------------
@@ -267,11 +284,23 @@ if "target_lang" not in st.session_state:
 if "translated_text" not in st.session_state:
     st.session_state.translated_text = ""
 
+if "tts_audio" not in st.session_state:
+    st.session_state.tts_audio = None
+
+if "tts_text" not in st.session_state:
+    st.session_state.tts_text = ""
+
+if "tts_lang" not in st.session_state:
+    st.session_state.tts_lang = "English"
+
 if "show_success" not in st.session_state:
     st.session_state.show_success = False
 
 if "is_translating" not in st.session_state:
     st.session_state.is_translating = False
+
+if "is_tts_processing" not in st.session_state:
+    st.session_state.is_tts_processing = False
 
 # -----------------------------
 # File Processing Functions
@@ -319,17 +348,49 @@ def extract_text_from_file(uploaded_file):
         return f"Unsupported file format: {file_ext}"
 
 # -----------------------------
-# Text-to-Speech Function
+# Text-to-Speech Functions
 # -----------------------------
-def text_to_speech(text, lang_code):
+def generate_tts_audio(text, lang_code, lang_name="English"):
+    """Generate TTS audio from text"""
     try:
-        tts = gTTS(text=text, lang=lang_code)
-        audio_bytes = BytesIO()
-        tts.write_to_fp(audio_bytes)
+        if not text.strip():
+            return None, "Please enter text for TTS"
+        
+        if len(text) > 5000:
+            return None, "Text too long for TTS (max 5000 characters)"
+        
+        with st.spinner(f"Generating {lang_name} audio..."):
+            tts = gTTS(text=text, lang=lang_code, slow=False)
+            audio_bytes = BytesIO()
+            tts.write_to_fp(audio_bytes)
+            audio_bytes.seek(0)
+            
+            # Store in session state
+            st.session_state.tts_audio = audio_bytes
+            st.session_state.tts_text = text
+            st.session_state.tts_lang = lang_name
+            
+            return audio_bytes, "Audio generated successfully!"
+    except Exception as e:
+        return None, f"TTS Error: {str(e)}"
+
+def save_tts_audio(audio_bytes, lang_name="English"):
+    """Save TTS audio to a temporary file for download"""
+    try:
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        filename = f"tts_audio_{lang_name}_{timestamp}.mp3"
+        
+        # Create a temporary file
+        temp_file = tempfile.NamedTemporaryFile(delete=False, suffix='.mp3')
+        temp_file.write(audio_bytes.read())
+        temp_file.close()
+        
+        # Reset pointer
         audio_bytes.seek(0)
-        return audio_bytes
-    except:
-        return None
+        
+        return temp_file.name, filename
+    except Exception as e:
+        return None, f"Error saving audio: {str(e)}"
 
 # -----------------------------
 # Translation Function with Proper Flow
@@ -347,26 +408,210 @@ def translate_text(text, target_lang, source_lang='auto'):
         raise Exception(f"Translation failed: {str(e)}")
 
 # -----------------------------
-# Main Translator Interface - FIXED FLOW
+# Text-to-Speech Interface
+# -----------------------------
+def show_tts_interface():
+    st.markdown('<div class="tts-area">', unsafe_allow_html=True)
+    st.markdown("### 🔊 Text-to-Speech Converter")
+    st.markdown("Convert any text to speech in multiple languages")
+    st.markdown('</div>', unsafe_allow_html=True)
+    
+    col1, col2 = st.columns(2)
+    
+    with col1:
+        st.markdown('<div class="input-area">', unsafe_allow_html=True)
+        
+        # TTS Text Input
+        tts_input = st.text_area(
+            "Enter text for speech:",
+            height=200,
+            placeholder="Type or paste text here to convert to audio...",
+            key="tts_input"
+        )
+        
+        if tts_input:
+            st.caption(f"Characters: {len(tts_input)}")
+        
+        # TTS Language Selection
+        tts_lang = st.selectbox(
+            "Select language for speech:",
+            list(LANGUAGES.keys()),
+            index=list(LANGUAGES.keys()).index(st.session_state.tts_lang),
+            key="tts_lang_select"
+        )
+        
+        # Generate TTS Button
+        col_gen, col_clear = st.columns(2)
+        with col_gen:
+            generate_tts = st.button(
+                "🔊 Generate Speech", 
+                use_container_width=True,
+                type="primary",
+                key="generate_tts"
+            )
+        
+        with col_clear:
+            clear_tts = st.button(
+                "🗑️ Clear", 
+                use_container_width=True,
+                key="clear_tts"
+            )
+        
+        if clear_tts:
+            st.session_state.tts_audio = None
+            st.session_state.tts_text = ""
+            st.rerun()
+        
+        st.markdown('</div>', unsafe_allow_html=True)
+    
+    with col2:
+        st.markdown('<div class="output-area">', unsafe_allow_html=True)
+        
+        # Handle TTS Generation
+        if generate_tts:
+            if not tts_input.strip():
+                st.warning("Please enter text for speech generation")
+            else:
+                audio_bytes, message = generate_tts_audio(tts_input, LANGUAGES[tts_lang], tts_lang)
+                
+                if audio_bytes:
+                    st.success(f"✅ {message}")
+                    
+                    # Audio Player
+                    st.markdown("### 🎧 Audio Preview")
+                    st.audio(audio_bytes, format="audio/mp3")
+                    
+                    # Download Button
+                    temp_file_path, filename = save_tts_audio(audio_bytes, tts_lang)
+                    
+                    if temp_file_path:
+                        with open(temp_file_path, 'rb') as f:
+                            audio_data = f.read()
+                        
+                        st.download_button(
+                            label="📥 Download Audio",
+                            data=audio_data,
+                            file_name=filename,
+                            mime="audio/mp3",
+                            use_container_width=True
+                        )
+                        
+                        # Clean up temp file
+                        try:
+                            os.unlink(temp_file_path)
+                        except:
+                            pass
+                    
+                    # TTS Info
+                    st.markdown("---")
+                    st.markdown("#### 📊 TTS Information")
+                    st.write(f"**Language:** {tts_lang}")
+                    st.write(f"**Text Length:** {len(tts_input)} characters")
+                    st.write(f"**Audio Format:** MP3")
+                    
+                else:
+                    st.error(f"❌ {message}")
+        
+        # Show existing TTS audio
+        elif st.session_state.tts_audio and st.session_state.tts_text:
+            st.success(f"✅ Audio available in {st.session_state.tts_lang}")
+            
+            # Audio Player
+            st.markdown("### 🎧 Audio Preview")
+            st.audio(st.session_state.tts_audio, format="audio/mp3")
+            
+            # Download Button
+            temp_file_path, filename = save_tts_audio(st.session_state.tts_audio, st.session_state.tts_lang)
+            
+            if temp_file_path:
+                with open(temp_file_path, 'rb') as f:
+                    audio_data = f.read()
+                
+                st.download_button(
+                    label="📥 Download Audio",
+                    data=audio_data,
+                    file_name=filename,
+                    mime="audio/mp3",
+                    use_container_width=True
+                )
+                
+                # Clean up temp file
+                try:
+                    os.unlink(temp_file_path)
+                except:
+                    pass
+            
+            # TTS Info
+            st.markdown("---")
+            st.markdown("#### 📊 TTS Information")
+            st.write(f"**Language:** {st.session_state.tts_lang}")
+            st.write(f"**Text Length:** {len(st.session_state.tts_text)} characters")
+            st.write(f"**Audio Format:** MP3")
+        
+        else:
+            st.info("✨ **TTS Audio will appear here**\n\n1. Enter text in the left box\n2. Select language\n3. Click 'Generate Speech'")
+        
+        st.markdown('</div>', unsafe_allow_html=True)
+    
+    # TTS Tips
+    st.markdown("---")
+    st.markdown("#### 💡 TTS Tips")
+    
+    tip_col1, tip_col2, tip_col3 = st.columns(3)
+    
+    with tip_col1:
+        st.markdown("**🎯 Best Practices**")
+        st.markdown("""
+        - Keep text under 5000 chars
+        - Use proper punctuation
+        - Avoid special characters
+        - Break long texts into paragraphs
+        """)
+    
+    with tip_col2:
+        st.markdown("**🌍 Popular Languages**")
+        st.markdown("""
+        - English (en)
+        - Hindi (hi)
+        - Spanish (es)
+        - Arabic (ar)
+        - Urdu (ur)
+        - Pashto (ps)
+        """)
+    
+    with tip_col3:
+        st.markdown("**⚡ Quick Actions**")
+        st.markdown("""
+        - Click 🔊 to preview
+        - Click 📥 to download
+        - Use clear button to reset
+        - Try different languages
+        """)
+
+# -----------------------------
+# Main Translator Interface
 # -----------------------------
 def show_translator():
     # Simple Header
-    st.markdown('<h1 class="main-header">🌐 AI Translator</h1>', unsafe_allow_html=True)
-    st.caption("Professional Translation with 1000+ Languages")
+    st.markdown('<h1 class="main-header">🌐 AI Translator & Text-to-Speech</h1>', unsafe_allow_html=True)
+    st.caption("Professional Translation & Speech Synthesis with 100+ Languages")
     
-    # Language Selection
-    st.markdown('<div class="simple-card">', unsafe_allow_html=True)
+    # Language Selection - Main section only
+    st.markdown('<div class="language-select">', unsafe_allow_html=True)
+    st.markdown("### 🎯 Select Target Language")
     target_lang = st.selectbox(
         "Translate to:",
         list(LANGUAGES.keys()),
         index=list(LANGUAGES.keys()).index(st.session_state.target_lang),
         key="target_lang"
     )
+    st.markdown(f"**Selected:** {target_lang} | **Code:** {LANGUAGES[target_lang]}")
     st.markdown('</div>', unsafe_allow_html=True)
     
-    # Tabs
-    tab1, tab2 = st.tabs(["📝 Text Translation", "📁 Document Translation"])
+    # Tabs for different functionalities
+    tab1, tab2, tab3 = st.tabs(["📝 Text Translation", "📁 Document Translation", "🔊 Text-to-Speech"])
     
+    # Tab 1: Text Translation
     with tab1:
         col1, col2 = st.columns(2)
         
@@ -382,7 +627,7 @@ def show_translator():
             if input_text:
                 st.caption(f"Characters: {len(input_text)}")
             
-            # Translate button - FIXED LOGIC
+            # Translate button
             translate_clicked = st.button("Translate Now", use_container_width=True, type="primary")
             
             st.markdown('</div>', unsafe_allow_html=True)
@@ -390,7 +635,7 @@ def show_translator():
         with col2:
             st.markdown('<div class="output-area">', unsafe_allow_html=True)
             
-            # Handle translation flow PROPERLY
+            # Handle translation flow
             if translate_clicked:
                 if not input_text.strip():
                     st.warning("Please enter some text to translate")
@@ -444,7 +689,7 @@ def show_translator():
                         # Audio and Download options
                         st.markdown("---")
                         
-                        col_audio, col_download = st.columns(2)
+                        col_audio, col_download, col_tts = st.columns(3)
                         with col_audio:
                             audio_bytes = text_to_speech(translated_text, LANGUAGES[target_lang])
                             if audio_bytes:
@@ -452,15 +697,22 @@ def show_translator():
                         
                         with col_download:
                             st.download_button(
-                                "Download Text",
+                                "📥 Download Text",
                                 data=translated_text,
                                 file_name=f"translation_{target_lang}.txt",
                                 mime="text/plain",
                                 use_container_width=True
                             )
                         
+                        with col_tts:
+                            if st.button("🔊 Generate Speech", use_container_width=True):
+                                st.session_state.tts_text = translated_text
+                                st.session_state.tts_lang = target_lang
+                                st.session_state.active_tab = "Tab 3"
+                                st.rerun()
+                        
                         # Clear button
-                        if st.button("Clear Translation", use_container_width=True):
+                        if st.button("🗑️ Clear Translation", use_container_width=True):
                             st.session_state.translated_text = ""
                             st.rerun()
                         
@@ -482,7 +734,7 @@ def show_translator():
                 
                 st.markdown("---")
                 
-                col_audio, col_download = st.columns(2)
+                col_audio, col_download, col_tts = st.columns(3)
                 with col_audio:
                     audio_bytes = text_to_speech(st.session_state.translated_text, LANGUAGES[target_lang])
                     if audio_bytes:
@@ -490,14 +742,21 @@ def show_translator():
                 
                 with col_download:
                     st.download_button(
-                        "Download Text",
+                        "📥 Download Text",
                         data=st.session_state.translated_text,
                         file_name=f"translation_{target_lang}.txt",
                         mime="text/plain",
                         use_container_width=True
                     )
                 
-                if st.button("Clear Translation", use_container_width=True):
+                with col_tts:
+                    if st.button("🔊 Generate Speech", use_container_width=True):
+                        st.session_state.tts_text = st.session_state.translated_text
+                        st.session_state.tts_lang = target_lang
+                        st.session_state.active_tab = "Tab 3"
+                        st.rerun()
+                
+                if st.button("🗑️ Clear Translation", use_container_width=True):
                     st.session_state.translated_text = ""
                     st.rerun()
             
@@ -506,6 +765,7 @@ def show_translator():
             
             st.markdown('</div>', unsafe_allow_html=True)
     
+    # Tab 2: Document Translation
     with tab2:
         st.markdown('<div class="input-area">', unsafe_allow_html=True)
         st.write("### Document Translation")
@@ -543,10 +803,10 @@ def show_translator():
                             )
                             
                             # Download options
-                            col1, col2 = st.columns(2)
+                            col1, col2, col3 = st.columns(3)
                             with col1:
                                 st.download_button(
-                                    "Download Text",
+                                    "📥 Download Text",
                                     data=translated_doc,
                                     file_name=f"translated_{uploaded_file.name}.txt",
                                     mime="text/plain",
@@ -556,12 +816,18 @@ def show_translator():
                                 doc_audio = text_to_speech(translated_doc, LANGUAGES[target_lang])
                                 if doc_audio:
                                     st.download_button(
-                                        "Download Audio",
+                                        "🎧 Download Audio",
                                         data=doc_audio,
                                         file_name=f"audio_{target_lang}.mp3",
                                         mime="audio/mp3",
                                         use_container_width=True
                                     )
+                            with col3:
+                                if st.button("🔊 Generate TTS", use_container_width=True):
+                                    st.session_state.tts_text = translated_doc
+                                    st.session_state.tts_lang = target_lang
+                                    st.session_state.active_tab = "Tab 3"
+                                    st.rerun()
                             
                         except Exception as e:
                             st.error(f"❌ Document translation failed: {str(e)}")
@@ -574,16 +840,128 @@ def show_translator():
         
         st.markdown('</div>', unsafe_allow_html=True)
     
+    # Tab 3: Text-to-Speech
+    with tab3:
+        show_tts_interface()
+
+# -----------------------------
+# Text-to-Speech Helper Function (for translation tabs)
+# -----------------------------
+def text_to_speech(text, lang_code):
+    """Quick TTS function for translation results"""
+    try:
+        tts = gTTS(text=text[:5000], lang=lang_code, slow=False)
+        audio_bytes = BytesIO()
+        tts.write_to_fp(audio_bytes)
+        audio_bytes.seek(0)
+        return audio_bytes
+    except:
+        return None
+
+# -----------------------------
+# Sidebar - UPDATED
+# -----------------------------
+def show_sidebar():
+    with st.sidebar:
+        st.markdown("## 🌐 AI Translator & TTS")
+        st.markdown("---")
+        
+        # App Info
+        st.markdown("""
+        ### 🚀 Features
+        - **100+ Languages** Support
+        - **Text & Document** Translation
+        - **Text-to-Speech** Audio Output
+        - **Real-time** Processing
+        - **History** Tracking
+        """)
+        
+        st.markdown("---")
+        
+        # Navigation
+        st.markdown("### ⚡ Quick Actions")
+        
+        col1, col2 = st.columns(2)
+        with col1:
+            if st.button("🔄 Clear All", use_container_width=True):
+                st.session_state.translated_text = ""
+                st.session_state.input_text = ""
+                st.session_state.tts_audio = None
+                st.session_state.tts_text = ""
+                st.rerun()
+        
+        with col2:
+            if st.button("📊 View History", use_container_width=True):
+                st.session_state.show_history = True
+        
+        st.markdown("---")
+        
+        # Recent Translations
+        st.markdown("### 📜 Recent Translations")
+        
+        if st.session_state.translation_history:
+            for i, entry in enumerate(reversed(st.session_state.translation_history[-5:])):
+                with st.expander(f"🕒 {entry['timestamp'][-8:]} → {entry['target']}"):
+                    st.write(f"**From:** {entry['source']}")
+                    st.write(f"**To:** {entry['target']}")
+                    st.write(f"**Characters:** {entry.get('characters', 0)}")
+                    
+                    col_load, col_tts = st.columns(2)
+                    with col_load:
+                        if st.button(f"🔁 Load", key=f"load_{i}"):
+                            st.session_state.translated_text = entry['translated']
+                            st.session_state.target_lang = entry['target']
+                            st.rerun()
+                    with col_tts:
+                        if st.button(f"🔊 TTS", key=f"tts_{i}"):
+                            st.session_state.tts_text = entry['translated']
+                            st.session_state.tts_lang = entry['target']
+                            st.session_state.active_tab = "Tab 3"
+                            st.rerun()
+        
+        # Clear history button
+        if st.session_state.translation_history:
+            if st.button("🗑️ Clear History", use_container_width=True):
+                st.session_state.translation_history = []
+                st.success("History cleared!")
+                st.rerun()
+        else:
+            st.info("No translation history yet")
+        
+        st.markdown("---")
+        
+        # Quick TTS
+        st.markdown("### 🔊 Quick TTS")
+        tts_quick_text = st.text_input("Quick text for TTS:", placeholder="Enter text...")
+        
+        if tts_quick_text:
+            quick_tts_lang = st.selectbox("Language:", ["English", "Hindi", "Urdu", "Spanish"], key="quick_tts")
+            
+            if st.button("Generate Quick TTS", use_container_width=True):
+                audio_bytes, message = generate_tts_audio(tts_quick_text, LANGUAGES[quick_tts_lang], quick_tts_lang)
+                if audio_bytes:
+                    st.audio(audio_bytes, format="audio/mp3")
+                    st.success("Quick TTS generated!")
+                else:
+                    st.error(message)
+
+# -----------------------------
+# Main App
+# -----------------------------
+def main():
+    show_sidebar()
+    show_translator()
+    
     # Platform Stats at Bottom
     st.markdown("---")
-    st.write("### Platform Statistics")
+    st.write("### 📊 Platform Statistics")
     
     col1, col2, col3, col4 = st.columns(4)
     
     with col1:
-        st.markdown("""
+        st.markdown(f"""
         <div class="stat-box">
-            <div class="stat-number">1000+</div>
+            <div class="stat-number">{len(LANGUAGES)}+</div>
             <div class="stat-label">Languages</div>
         </div>
         """, unsafe_allow_html=True)
@@ -612,56 +990,6 @@ def show_translator():
             <div class="stat-label">Translations</div>
         </div>
         """, unsafe_allow_html=True)
-
-# -----------------------------
-# Sidebar
-# -----------------------------
-def show_sidebar():
-    with st.sidebar:
-        st.write("### 🌐 AI Translator")
-        st.markdown("---")
-        
-        # Navigation
-        if st.button("Clear & Refresh", use_container_width=True):
-            st.session_state.translated_text = ""
-            st.session_state.input_text = ""
-            st.rerun()
-        
-        # History section
-        st.write("#### 📊 Translation History")
-        
-        if st.session_state.translation_history:
-            for i, entry in enumerate(reversed(st.session_state.translation_history[-5:])):
-                with st.expander(f"{entry['timestamp'][-8:]} | {entry['target']}"):
-                    st.write(f"**From:** {entry['source']}")
-                    st.write(f"**To:** {entry['target']}")
-                    st.write(f"**Chars:** {entry.get('characters', 0)}")
-                    
-                    if st.button(f"Load", key=f"load_{i}"):
-                        st.session_state.translated_text = entry['translated']
-                        st.session_state.target_lang = entry['target']
-                        st.rerun()
-        
-        # Clear history
-        if st.session_state.translation_history:
-            if st.button("Clear All History", use_container_width=True):
-                st.session_state.translation_history = []
-                st.rerun()
-        
-        # Quick languages
-        st.write("#### 🌍 Quick Languages")
-        pop_langs = ['Urdu', 'English', 'Arabic', 'Hindi', 'Spanish']
-        selected = st.selectbox("Jump to:", pop_langs)
-        if selected != st.session_state.target_lang:
-            st.session_state.target_lang = selected
-            st.rerun()
-
-# -----------------------------
-# Main App
-# -----------------------------
-def main():
-    show_sidebar()
-    show_translator()
 
 if __name__ == "__main__":
     main()
